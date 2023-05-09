@@ -33,6 +33,49 @@ public class AddressCodeServiceImpl implements AddressCodeService {
     private final AddressCodeRepository addressCodeRepository;
     private final ResponseService responseService;
 
+    // 주소에서 아파트 이름 조회
+    @Override
+    public String findAptName(String address) {
+        String[] addressList = address.split(" ");
+
+        int count = 0;
+        if (addressList[2].endsWith("동")) {
+            count = 3;
+        } else {
+            count = 4;
+        }
+
+        for(int i=count; i<addressList.length; i++){
+            if(addressList[i].contains("필지")){
+                count = i;
+                break;
+            }
+        }
+
+        return addressList[count + 1].trim();
+    }
+
+    // 법정동 코드 조회
+    @Override
+    public String findAddressCode(String address) {
+
+        String[] addressList = address.split(" ");
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        if (addressList[2].endsWith("동")) {
+            count = 3;
+        } else {
+            count = 4;
+        }
+        for (int i = 0; i < count; i++) {
+            sb.append(addressList[i]);
+            sb.append(" ");
+        }
+        address = sb.toString().trim();
+
+        return addressCodeRepository.findByLegdongName(address)
+                .orElseThrow(IllegalArgumentException::new).getLegdongCode();
+    }
 
     // 전 지역 법정동 코드 db에 저장
     @Override
