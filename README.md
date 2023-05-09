@@ -12,7 +12,13 @@
   </tbody>
 </table>
 
-## 💡 커밋 컨밴션
+## 💡 프로젝트 관리
+1. Issues 탭 또는 Prjects 탭의 보드에서 Issue Template을 이용하여 Issue 생성
+2. Branch 
+```
+feature/이름
+```
+3. Commit
 ```
 - docs : 문서 작업 (README.md)
 - feat : 새로운 기능 구현
@@ -30,7 +36,17 @@
 ```
 **Commit 예시**
 ```
-feat : 회원가입 기능 구현
-docs : issue template 생성
-fix : 로그인 에러 해결
+[동작] : 내용 #이슈번호
+
+feat : 회원가입 기능 구현 #3
+docs : issue template 생성 #5
+fix : 로그인 에러 해결 #16
 ```
+
+4. pull request
+전체적으로 Issue와 비슷하지만 내용에 `close #이슈번호` 추가.
+
+## Architecture
+<img src="https://user-images.githubusercontent.com/60730405/237012545-dfdf9cc2-3a98-4e47-81a3-7f88dd065f4a.JPG"  width="950" height="600"/>
+
+
