@@ -18,13 +18,9 @@ public class PdfParsingResDTO {
 
     private Map<Integer, HashMap<String, String>> rights_other_than_ownership; // 을구 소유권 이외 어쩌구
 
-    private Long jeonse_amount; // 전세금 합
+    private Long collateral_amount; // 채권최고액 합(담보총액)
 
-    private int jeonse_count; // 전세 건수
-
-    private Long collateral_amount; // 채권최고액 합
-
-    private int collateral_count; // 채권최고액 건수
+    private int collateral_count; // 채권최고액 건수(담보건수)
 
 
 //    private String uniqueNumber; // 고유번호

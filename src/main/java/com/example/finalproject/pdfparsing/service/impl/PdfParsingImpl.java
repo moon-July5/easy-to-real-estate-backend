@@ -198,8 +198,6 @@ public class PdfParsingImpl implements PdfParsingService {
      * @param pdfParsingResDTO
      */
     public HashMap<Integer, String> jeonseMortgageParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
-        long sumJeonse_deposit = 0; // 전세금 합
-        int jeonseCount = 0; // 전세금 건수
         long sum_mortgageBond = 0; // 채권최고액 합
         int mortgageCount = 0; // 채권최고액 건수
 
@@ -237,7 +235,6 @@ public class PdfParsingImpl implements PdfParsingService {
                     long value = Long.parseLong(match.replaceAll("[^0-9]", ""));
                     if (match.startsWith("전세금")) {
                         max_mortgageBond.put(i/2 + 1, match);
-                        sumJeonse_deposit += value;
                     } else if (match.startsWith("채권최고액")) {
                         max_mortgageBond.put(i/2 + 1, match);
                         sum_mortgageBond += value;
@@ -250,8 +247,6 @@ public class PdfParsingImpl implements PdfParsingService {
                 }
             }
 
-            pdfParsingResDTO.setJeonse_amount(sumJeonse_deposit); // 전세금 합
-            pdfParsingResDTO.setJeonse_count(jeonseCount); // 전세금 건수
             pdfParsingResDTO.setCollateral_amount(sum_mortgageBond); // 채권최고액 합
             pdfParsingResDTO.setCollateral_count(mortgageCount); // 채권최고액 건수
         }
