@@ -130,33 +130,28 @@ public class PdfParsingImpl implements PdfParsingService {
         int i = 1;
         HashMap<Integer, String> acceptList = acceptParsing(pdfSplitParts);
 
-        if(matcher.find() == false) {
-            pdfParsingResDTO.setRights_other_than_ownership(null);
-        }else {
-            while (matcher.find()) {
-                HashMap<String, String> rights_other_than_ownership = new HashMap<>();
-                rights_other_than_ownership.put("rank", matcher.group("rank"));
-                rights_other_than_ownership.put("purpose", matcher.group("purpose"));
-                rights_other_than_ownership.put("owner", matcher.group("owner"));
+        while (matcher.find()) {
+            HashMap<String, String> rights_other_than_ownership = new HashMap<>();
+            rights_other_than_ownership.put("rank", matcher.group("rank"));
+            rights_other_than_ownership.put("purpose", matcher.group("purpose"));
+            rights_other_than_ownership.put("owner", matcher.group("owner"));
 
-                String accept = acceptList.get(i);
-                rights_other_than_ownership.put("accept", accept);
+            String accept = acceptList.get(i);
+            rights_other_than_ownership.put("accept", accept);
 
-                HashMap<Integer, String> max_mortgageBond = jeonseMortgageParsing(pdfSplitParts, pdfParsingResDTO);
-                String max = max_mortgageBond.get(i);
-                HashMap<Integer, String> attachmentName = attachmentNameParsing(pdfSplitParts);
-                String name = attachmentName.get(i);
-                StringBuilder sb = new StringBuilder();
+            HashMap<Integer, String> max_mortgageBond = jeonseMortgageParsing(pdfSplitParts, pdfParsingResDTO);
+            String max = max_mortgageBond.get(i);
+            HashMap<Integer, String> attachmentName = attachmentNameParsing(pdfSplitParts);
+            String name = attachmentName.get(i);
+            StringBuilder sb = new StringBuilder();
 
-                sb.append(max).append(" ").append(name);
-                rights_other_than_ownership.put("info", sb.toString());
+            sb.append(max).append(" ").append(name);
+            rights_other_than_ownership.put("info", sb.toString());
 
-                i++;
-                max_mortgageBondMap.put(count++, rights_other_than_ownership);
-            }
-            pdfParsingResDTO.setRights_other_than_ownership(max_mortgageBondMap);
+            i++;
+            max_mortgageBondMap.put(count++, rights_other_than_ownership);
         }
-
+        pdfParsingResDTO.setRights_other_than_ownership(max_mortgageBondMap);
     }
 
     /**
