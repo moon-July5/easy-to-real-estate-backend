@@ -92,6 +92,7 @@ public class PdfParsingImpl implements PdfParsingService {
         String[] splitted = pdfText.split("주요 등기사항 요약", 2);
         String[] additional_split = splitted[splitted.length - 1].split("1[.]|2[.]|3[.]", 4);
 
+        ownerParsing(additional_split[1], pdfParsingResDTO);
         rights_other_than_ownershipParsing(additional_split[3], pdfParsingResDTO);
     }
 
@@ -115,7 +116,48 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 을구 소유권 이외 어쩌구 파싱
+     * 등기부 요약 - 갑구
+     * @param pdfSplitParts
+     * @param pdfParsingResDTO
+     */
+    public void ownerParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
+
+        String regex = "(?<name>[가-힣]+) \\((소유자|공유자)\\) (?<age>\\d{6}-\\*{7}) (?<share>[0-9/분의|단독소유 ]+) (?<owneraddress>[^\\n\\r]+).* (?<rank>\\d+)";
+
+        String[] splitted = pdfSplitParts.split("\n");
+
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(pdfSplitParts);
+        Map<Integer, HashMap<String, String>> ownerMap = new HashMap<>();
+        int count = 1;
+        while (matcher.find()) {
+            HashMap<String, String> owner = new HashMap<>();
+            StringBuilder sb = new StringBuilder();
+            owner.put("name", matcher.group("name"));
+            owner.put("age", matcher.group("age"));
+            if (matcher.group("share").contains("분의")) {
+                String[] shareArray = matcher.group("share").split("분의 ", 2);
+
+                double share = Double.parseDouble(shareArray[shareArray.length - 1]) / Double.parseDouble(shareArray[0]);
+                owner.put("share", String.valueOf(share));
+                owner.put("percent", share * 100 + "%");
+            } else {
+                owner.put("share", "단독소유");
+                owner.put("percent", "100%");
+            }
+            sb.append(matcher.group("owneraddress")).append(" ");
+            sb.append(splitted[splitted.length - 1].trim());
+            owner.put("ownerAddress", sb.toString());
+            owner.put("rank", matcher.group("rank"));
+
+            ownerMap.put(count++, owner);
+        }
+        pdfParsingResDTO.setOwnership_list(ownerMap);
+    }
+
+    /**
+     * 등기부요약 - 을구
      * @param pdfSplitParts
      * @param pdfParsingResDTO
      */
