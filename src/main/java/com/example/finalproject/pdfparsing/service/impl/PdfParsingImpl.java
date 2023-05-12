@@ -157,7 +157,7 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 등기부요약 - 을구
+     * 등기부 요약 - 을구
      * @param pdfSplitParts
      * @param pdfParsingResDTO
      */
@@ -197,7 +197,7 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 접수정보 파싱
+     * 요약 접수정보 파싱 - 을구
      * @param pdfSplitParts
      */
     public HashMap<Integer, String> acceptParsing(String pdfSplitParts){
@@ -230,7 +230,7 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 담보 총액 구하기
+     * 요약 담보 총액 구하기
      * @param pdfSplitParts
      * @param pdfParsingResDTO
      */
@@ -291,7 +291,7 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 주요등기사항 중 회사/사람 파싱
+     * 요약 주요등기사항 중 회사/사람 파싱
      * @param pdfSplitParts
      */
     public HashMap<Integer, String> attachmentNameParsing(String pdfSplitParts) {
