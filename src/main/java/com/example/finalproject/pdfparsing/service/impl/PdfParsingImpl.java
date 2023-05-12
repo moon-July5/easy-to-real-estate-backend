@@ -93,6 +93,7 @@ public class PdfParsingImpl implements PdfParsingService {
         String[] additional_split = splitted[splitted.length - 1].split("1[.]|2[.]|3[.]", 4);
 
         ownerParsing(additional_split[1], pdfParsingResDTO);
+        withoutOwnerParsing(additional_split[2], pdfParsingResDTO);
         rights_other_than_ownershipParsing(additional_split[3], pdfParsingResDTO);
     }
 
@@ -148,12 +149,51 @@ public class PdfParsingImpl implements PdfParsingService {
             }
             sb.append(matcher.group("owneraddress")).append(" ");
             sb.append(splitted[splitted.length - 1].trim());
-            owner.put("ownerAddress", sb.toString());
+            owner.put("ownerAddress", String.valueOf(sb));
             owner.put("rank", matcher.group("rank"));
 
             ownerMap.put(count++, owner);
         }
         pdfParsingResDTO.setOwnership_list(ownerMap);
+    }
+
+    /**
+     * 등기부 요약 - 갑구 이외
+     * @param pdfSplitParts
+     * @param pdfParsingResDTO
+     */
+    public void withoutOwnerParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO){
+        String regex = "(?<rank>\\d+-?\\d*(?:-\\d*)?) (?<purpose>[가-힣]+) .* (?<owner>[가-힣]+)";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(pdfSplitParts);
+        Map<Integer, HashMap<String, String>> withoutOwnerMap = new HashMap<>();
+        int count = 1;
+        int i = 1;
+        HashMap<Integer, String> acceptList = gapguAcceptParsing(pdfSplitParts);
+
+        while (matcher.find()) {
+            HashMap<String, String> ownerMap = new HashMap<>();
+            ownerMap.put("rank", matcher.group("rank"));
+            ownerMap.put("purpose", matcher.group("purpose"));
+            ownerMap.put("owner", matcher.group("owner"));
+
+            String accept = acceptList.get(i);
+            ownerMap.put("accept", accept);
+
+            HashMap<Integer, String> attachmentMoney = attachmentMoneyParsing(pdfSplitParts, pdfParsingResDTO);
+            String money = attachmentMoney.get(i);
+            HashMap<Integer, String> attachmentName = attachmentNameParsing(pdfSplitParts);
+            String name = attachmentName.get(i);
+            StringBuilder sb = new StringBuilder();
+
+            sb.append(money).append(" ").append(name);
+            ownerMap.put("info", String.valueOf(sb));
+
+            i++;
+            withoutOwnerMap.put(count++, ownerMap);
+        }
+        pdfParsingResDTO.setWithoutOwner(withoutOwnerMap);
     }
 
     /**
@@ -188,12 +228,71 @@ public class PdfParsingImpl implements PdfParsingService {
             StringBuilder sb = new StringBuilder();
 
             sb.append(max).append(" ").append(name);
-            rights_other_than_ownership.put("info", sb.toString());
+            rights_other_than_ownership.put("info", String.valueOf(sb));
 
             i++;
             max_mortgageBondMap.put(count++, rights_other_than_ownership);
         }
         pdfParsingResDTO.setRights_other_than_ownership(max_mortgageBondMap);
+    }
+
+    /**
+     * 요약 접수정보 파싱 - 갑구
+     * @param pdfSplitParts
+     * @return
+     */
+    public HashMap<Integer, String> gapguAcceptParsing(String pdfSplitParts){
+
+        String[] splited = pdfSplitParts.split("3[.]");
+
+        String regex = "\\d{4}년\\d{1,2}월\\d{1,2}일";
+        Pattern pattern = Pattern.compile(regex);
+        String[] lines = splited[0].split("\n");
+        HashMap<Integer, String> acceptList = new HashMap<>();
+        Matcher matcher;
+        int count = 1;
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < lines.length; i++) {
+            matcher = pattern.matcher(lines[i]);
+            if(matcher.find()){
+                sb.append(matcher.group()).append(" ");
+                if(lines[i+1].contains("제")){
+                    sb.append(lines[i+1].replaceAll("[^(제\\d{1,10}호)]", ""));
+                    acceptList.put(count++, String.valueOf(sb));
+                }else{
+                    sb.append(lines[i+4].replaceAll("[^(제\\d{1,10}호)]", ""));
+                    acceptList.put(count++, String.valueOf(sb));
+                }
+                sb.setLength(0);
+            }
+        }
+        return acceptList;
+    }
+
+    /**
+     * 요약 청구금액 파싱 - 갑구
+     * @param pdfSplitParts
+     * @param pdfParsingResDTO
+     * @return
+     */
+    public HashMap<Integer, String> attachmentMoneyParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
+
+        String regex = "(청구금액)\\s+금(\\d{1,3}(,\\d{3})*) 원";
+        Pattern pattern = Pattern.compile(regex);
+        HashMap<Integer, String> attachment = new HashMap<>();
+        String[] splitted = pdfSplitParts.split("\n");
+        for (int i = 0; i < splitted.length - 2; i++) {
+            Matcher matcher = pattern.matcher(splitted[i + 2]);
+
+            if (matcher.find()) {
+                String match = matcher.group();
+                if (match.startsWith("청구금액")) {
+                    attachment.put(i / 2 + 1, match);
+                }
+            }
+        }
+        return attachment;
     }
 
     /**
@@ -218,10 +317,10 @@ public class PdfParsingImpl implements PdfParsingService {
                 sb.append(matcher.group()).append(" ");
                 if(lines[i+1].contains("제")){
                     sb.append(lines[i+1].replaceAll("[^(제\\d{1,10}호)]", ""));
-                    acceptList.put(count++, sb.toString());
+                    acceptList.put(count++, String.valueOf(sb));
                 }else{
                     sb.append(lines[i+4].replaceAll("[^(제\\d{1,10}호)]", ""));
-                    acceptList.put(count++, sb.toString());
+                    acceptList.put(count++, String.valueOf(sb));
                 }
                 sb.setLength(0);
             }
@@ -230,7 +329,7 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 요약 담보 총액 구하기
+     * 요약 담보 총액 구하기 - 을구
      * @param pdfSplitParts
      * @param pdfParsingResDTO
      */
@@ -291,7 +390,7 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 요약 주요등기사항 중 회사/사람 파싱
+     * 요약 주요등기사항 중 회사/사람 파싱 - 갑구&을구
      * @param pdfSplitParts
      */
     public HashMap<Integer, String> attachmentNameParsing(String pdfSplitParts) {

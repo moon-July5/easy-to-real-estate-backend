@@ -16,9 +16,11 @@ import java.util.Map;
 
 public class PdfParsingResDTO {
 
-    private Map<Integer, HashMap<String, String>> rights_other_than_ownership; // 을구 소유권 이외 어쩌구
+    private Map<Integer, HashMap<String, String>> ownership_list; // 등기부 요약 갑구
 
-    private Map<Integer, HashMap<String, String>> ownership_list;
+    private Map<Integer, HashMap<String, String>> withoutOwner; // 등기부 요약 갑구 이외
+
+    private Map<Integer, HashMap<String, String>> rights_other_than_ownership; // 등기부 요약 을구
 
     private Long collateral_amount; // 채권최고액 합(담보총액)
 
