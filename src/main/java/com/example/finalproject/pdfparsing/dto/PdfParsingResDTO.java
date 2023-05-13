@@ -16,6 +16,8 @@ import java.util.Map;
 
 public class PdfParsingResDTO {
 
+    private HashMap<String, String> summary; // 매물요약
+
     private Map<Integer, HashMap<String, String>> ownership_list; // 등기부 요약 갑구
 
     private Map<Integer, HashMap<String, String>> withoutOwner; // 등기부 요약 갑구 이외
@@ -25,6 +27,12 @@ public class PdfParsingResDTO {
     private Long collateral_amount; // 채권최고액 합(담보총액)
 
     private int collateral_count; // 채권최고액 건수(담보건수)
+
+    private String viewed_at; // 등기부등본 열람일시
+
+    private String registry_number; // 등기부등본 고유번호
+
+    private String address; // 매물의 일반주소지
 
 
 //    private String uniqueNumber; // 고유번호

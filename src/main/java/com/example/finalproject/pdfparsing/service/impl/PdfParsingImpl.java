@@ -20,6 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -67,11 +69,12 @@ public class PdfParsingImpl implements PdfParsingService {
                 try {
                     //exclusiveAreaParsing(pdfText, pdfParsingResDTO);
                     //titleLandRightParsing(pdfText, pdfParsingResDTO);
+                    summaryParsing(pdfText, pdfParsingResDTO);
                     pdfText.contains("주요 등기사항 요약");
                 }catch (Exception e){
                     throw new PDFValidationException();
                 }
-                summaryParsing(pdfText, pdfParsingResDTO);
+                withoutSummaryParsing(pdfText, pdfParsingResDTO);
             } catch (Exception e) {
                 throw new KeywordValidationException();
             }
@@ -83,15 +86,17 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * summary Parsing
+     * withoutSummaryParsing
      * @param pdfText
      * @param pdfParsingResDTO
      */
-    public void summaryParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO) {
+    public void withoutSummaryParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO) {
 
         String[] splitted = pdfText.split("주요 등기사항 요약", 2);
         String[] additional_split = splitted[splitted.length - 1].split("1[.]|2[.]|3[.]", 4);
 
+        numberAddressFloorParsing(additional_split[0], pdfParsingResDTO);
+        printingDateParsing(additional_split[3], pdfParsingResDTO);
         ownerParsing(additional_split[1], pdfParsingResDTO);
         withoutOwnerParsing(additional_split[2], pdfParsingResDTO);
         rights_other_than_ownershipParsing(additional_split[3], pdfParsingResDTO);
@@ -116,6 +121,34 @@ public class PdfParsingImpl implements PdfParsingService {
         return key;
     }
 
+
+    /**
+     * 매물요약 파싱
+     * @param pdfText
+     * @param pdfParsingResDTO
+     */
+    public void summaryParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO){
+
+        HashMap<String, String> summary = new HashMap<>();
+        String area = exclusiveAreaParsing(pdfText, pdfParsingResDTO);
+        Double size = Double.parseDouble(area) * 0.3025;
+        String pyeong = String.format("%.1f", size);
+        String land_rights = landRightParsing(pdfText, pdfParsingResDTO);
+        String full_transfer_date = full_transfer_dateParsing(pdfText, pdfParsingResDTO);
+
+        summary.put("viewedAt", pdfParsingResDTO.getViewed_at());
+        summary.put("address", pdfParsingResDTO.getAddress());
+        //매물 기존 주소는  Ownership_list의 "address" 사용하시면 됩니다!
+        summary.put("registryNumber", pdfParsingResDTO.getRegistry_number());
+        summary.put("area", area);
+        summary.put("pyeong", pyeong);
+        //소유자 이름과 지분은 Ownership_list의 "name"과 "percent" 사용하시면 됩니다!
+        summary.put("landRights", land_rights);
+        summary.put("fullTransfer", full_transfer_date);
+
+        pdfParsingResDTO.setSummary(summary);
+    }
+
     /**
      * 등기부 요약 - 갑구
      * @param pdfSplitParts
@@ -123,10 +156,9 @@ public class PdfParsingImpl implements PdfParsingService {
      */
     public void ownerParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
 
-        String regex = "(?<name>[가-힣]+) \\((소유자|공유자)\\) (?<age>\\d{6}-\\*{7}) (?<share>[0-9/분의|단독소유 ]+) (?<owneraddress>[^\\n\\r]+).* (?<rank>\\d+)";
+        String regex = "(?<name>[가-힣]+) \\((소유자|공유자)\\) (?<age>\\d{6}-\\*{7}) (?<share>[0-9/분의|단독소유 ]+) (?<address>[^\\n\\r]+).* (?<rank>\\d+)";
 
         String[] splitted = pdfSplitParts.split("\n");
-
 
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(pdfSplitParts);
@@ -147,9 +179,9 @@ public class PdfParsingImpl implements PdfParsingService {
                 owner.put("share", "단독소유");
                 owner.put("percent", "100%");
             }
-            sb.append(matcher.group("owneraddress")).append(" ");
+            sb.append(matcher.group("address")).append(" ");
             sb.append(splitted[splitted.length - 1].trim());
-            owner.put("ownerAddress", String.valueOf(sb));
+            owner.put("address", String.valueOf(sb));
             owner.put("rank", matcher.group("rank"));
 
             ownerMap.put(count++, owner);
@@ -235,6 +267,99 @@ public class PdfParsingImpl implements PdfParsingService {
         }
         pdfParsingResDTO.setRights_other_than_ownership(max_mortgageBondMap);
     }
+
+    /**
+     * 매물요약 - 매물일반주소지, 고유번호 파싱
+     * @param pdfSplitParts
+     * @param pdfParsingResDTO
+     */
+    public void numberAddressFloorParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
+
+        String[] splitted = pdfSplitParts.split("바랍니다.", 2);
+        String[] additional_split = splitted[splitted.length - 1].split("\\[집합건물]|\\[건물]", 2);
+
+        pdfParsingResDTO.setRegistry_number(additional_split[0].substring(6).trim());
+        pdfParsingResDTO.setAddress(additional_split[additional_split.length - 1].trim());
+
+    }
+
+    /**
+     * 매물요약 - 열람일시 파싱
+     * @param pdfSplitParts
+     * @param pdfParsingResDTO
+     */
+    public void printingDateParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
+        String[] splitted = pdfSplitParts.split("\n");
+        String printTime = splitted[splitted.length - 1].substring(7).trim();
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH시 mm분 ss초");
+        LocalDateTime dt = LocalDateTime.parse(printTime, inputFormatter);
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+        pdfParsingResDTO.setViewed_at(dt.format(outputFormatter));
+    }
+
+    /**
+     * 매물요약 - 면적, 평수 파싱
+     * @param pdfText
+     * @param pdfParsingResDTO
+     */
+    public String exclusiveAreaParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO) {
+
+        String[] splitted = pdfText.split("( 전유부분의 건물의 표시 )", 2);
+        String[] additional_split = splitted[splitted.length - 1].split("( 대지권의 표시 )");
+        String match = null;
+
+        String regex = "\\d+\\.\\d+㎡";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(additional_split[0]);
+        if (matcher.find()) {
+            match = matcher.group(0).replace("㎡", "").trim();
+            if(match.length() > 4){
+                match = match.substring(0,5);
+            }
+        }
+            return match;
+    }
+
+    /**
+     * 매물요약 - 대지권 유무 파싱
+     * @param pdfText
+     * @param pdfParsingResDTO
+     */
+    public String landRightParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO){
+
+        String[] splitted = pdfText.split("( 전유부분의 건물의 표시 )", 2);
+        String[] additional_split = splitted[splitted.length - 1].split("( 대지권의 표시 )");
+
+        for(String info : additional_split) {
+            if (info.contains("소유권대지권")) {
+                return "대지권 유";
+            }
+        }
+        return "대지권 무";
+    }
+
+    /**
+     * 매물요약 - 지분전부이전 파싱
+     * @param pdfText
+     * @param pdfParsingResDTO
+     */
+    public String full_transfer_dateParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO) {
+
+        String[] splitted = pdfText.split("【  을      구  】");
+        String[] additional_split = splitted[0].split("( 소유권에 관한 사항 )");
+        String regex = "(?<text>[가-힣]+지분전부) (?<date>\\d{4}년\\d{1,2}월\\d{1,2}일)";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(additional_split[additional_split.length - 1]);
+        StringBuilder sb = new StringBuilder();
+        String match = null;
+        if (matcher.find()) {
+            match = matcher.group("date");
+
+        }
+        return match;
+    }
+
 
     /**
      * 요약 접수정보 파싱 - 갑구
