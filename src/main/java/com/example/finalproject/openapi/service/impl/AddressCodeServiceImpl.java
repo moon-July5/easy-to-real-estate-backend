@@ -67,6 +67,10 @@ public class AddressCodeServiceImpl implements AddressCodeService {
         } else {
             count = 4;
         }
+
+        if(addressList[count].endsWith("리"))
+            count = 3;
+
         for (int i = 0; i < count; i++) {
             sb.append(addressList[i]);
             sb.append(" ");
