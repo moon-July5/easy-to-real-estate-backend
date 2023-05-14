@@ -1,5 +1,6 @@
 package com.example.finalproject.crawling.service.impl;
 
+import com.example.finalproject.crawling.dto.ActTransacAndMarketPriceResDTO;
 import com.example.finalproject.crawling.dto.ActualTransactionPriceResDTO;
 import com.example.finalproject.crawling.dto.MarketPriceResDTO;
 import com.example.finalproject.crawling.service.CrawlingService;
@@ -39,7 +40,10 @@ public class CrawlingServiceImpl implements CrawlingService {
     @Override
     public void crawling(String complexesNumber, PdfParsingResDTO pdfParsingResDTO) {
         ChromeDriver driver = option();
-        int interval = 1000;
+
+        List<ActualTransactionPriceResDTO> actualTransactionPriceList = new ArrayList<>();
+        List<MarketPriceResDTO> marketPriceList = new ArrayList<>();
+        List<ActTransacAndMarketPriceResDTO> actTransacAndMarketPriceList = new ArrayList<>();
 
         HashMap<String, String> summary = pdfParsingResDTO.getSummary();
         String area = summary.get("area"); // 전용 면적
@@ -120,9 +124,6 @@ public class CrawlingServiceImpl implements CrawlingService {
             if(getArea(size).equals(area))
                 break;
         }
-
-        List<ActualTransactionPriceResDTO> actualTransactionPriceList = new ArrayList<>();
-        List<MarketPriceResDTO> marketPriceList = new ArrayList<>();
 
         // 시세/실거래가 클릭
         driver.findElement(By.xpath("//*[@id=\"summaryInfo\"]/div[2]/div[2]/button[2]")).click();
@@ -250,6 +251,46 @@ public class CrawlingServiceImpl implements CrawlingService {
 
                 marketPriceList.add(marketPriceResDTO);
             }
+
+            ActTransacAndMarketPriceResDTO actTransacAndMarketPriceResDTO = new ActTransacAndMarketPriceResDTO();
+
+            // 최근 매매 실거래가 있는 경우
+            if(document.select("dl.complex_price--trade").size() != 0){
+                Elements recent = document.select("dl.complex_price--trade");
+
+                String recentTrades = recent.select("dd").get(0).text();
+
+                actTransacAndMarketPriceResDTO.setRecent_trades(recentTrades);
+            } else {
+                actTransacAndMarketPriceResDTO.setRecent_trades("-");
+            }
+
+            // 매매/전세 하한가 및 상한가, 매매가 대비 전세가 추출
+            // 값이 있는 경우
+            if (document.select("div.detail_asking_price").size() != 0) {
+                // 상한가, 하한가의 정보가 들은 테이블 소스
+                Elements minMaxTable = document.select("div.detail_table_cell");
+
+                // 하한가 가격
+                String minPrice = minMaxTable.get(0).select("strong").text();
+
+                // 상한가 가격
+                String maxPrice = minMaxTable.get(1).select("strong").text();
+
+                // 매매가 대비 전세가 퍼센트(%)
+                String rentFeePrice = minMaxTable.get(2).select("strong").text();
+
+                actTransacAndMarketPriceResDTO.setLower_limit_price(minPrice);
+                actTransacAndMarketPriceResDTO.setUpper_limit_price(maxPrice);
+                actTransacAndMarketPriceResDTO.setSales_vs_rent_price(rentFeePrice);
+            } else {
+                actTransacAndMarketPriceResDTO.setLower_limit_price("-");
+                actTransacAndMarketPriceResDTO.setUpper_limit_price("-");
+                actTransacAndMarketPriceResDTO.setSales_vs_rent_price("-");
+            }
+
+            actTransacAndMarketPriceResDTO.setTransaction_type(type);
+            actTransacAndMarketPriceList.add(actTransacAndMarketPriceResDTO);
         }
 
         driver.quit();
@@ -361,6 +402,10 @@ public class CrawlingServiceImpl implements CrawlingService {
             String result2 = matcher2.group(2);
             result[0] = result1;
             result[1] = result2;
+        }
+
+        if(result[0].length()==1){
+            result[0] = "0" + result[0];
         }
 
         return result;
