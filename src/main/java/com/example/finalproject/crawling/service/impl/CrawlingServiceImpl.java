@@ -1,6 +1,7 @@
 package com.example.finalproject.crawling.service.impl;
 
 import com.example.finalproject.crawling.dto.ActualTransactionPriceResDTO;
+import com.example.finalproject.crawling.dto.MarketPriceResDTO;
 import com.example.finalproject.crawling.service.CrawlingService;
 import com.example.finalproject.global.response.ResponseService;
 import com.example.finalproject.openapi.service.AddressCodeService;
@@ -121,6 +122,7 @@ public class CrawlingServiceImpl implements CrawlingService {
         }
 
         List<ActualTransactionPriceResDTO> actualTransactionPriceList = new ArrayList<>();
+        List<MarketPriceResDTO> marketPriceList = new ArrayList<>();
 
         // 시세/실거래가 클릭
         driver.findElement(By.xpath("//*[@id=\"summaryInfo\"]/div[2]/div[2]/button[2]")).click();
@@ -193,7 +195,63 @@ public class CrawlingServiceImpl implements CrawlingService {
                     actualTransactionPriceList.add(actualTransactionPrice);
                 }
             }
+
+            displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
+
+            count = 0;
+            // 시세 더보기 버튼이 존재하면 클릭
+            while(displayOk) {
+                driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).click();
+                //wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.detail_price_data button.detail_data_more"))).click();
+
+                // 탭 클릭때마다 0.1초 쉼
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                count++;
+
+                displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
+
+                // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
+                document = Jsoup.parse(driver.getPageSource());
+
+                if(count>6)
+                    break;
+            }
+
+            Elements marketPrice = document.select("div.detail_price_data table.type_price tbody tr");
+
+            for(int j=0; j<marketPrice.size(); j++){
+                MarketPriceResDTO marketPriceResDTO = new MarketPriceResDTO();
+
+                Element row = marketPrice.get(j);
+
+                String referenceDate = row.select("th").text().replaceAll("\\.", "-").substring(0, 10);
+                String lowerLimitPrice = row.select("td").get(0).text();
+                String upperLimitPrice = row.select("td").get(1).text();
+                String averageChange = null;
+                if(row.select("td").get(2).text().equals("-")){
+                    averageChange = row.select("td").get(2).text();
+                } else {
+                    averageChange = row.select("td strong.detail_table_price span.detail_price_text").text();
+                }
+
+                String salesVsRentPrice = row.select("td").get(3).text();
+
+                marketPriceResDTO.setReference_date(referenceDate);
+                marketPriceResDTO.setTransaction_type(type);
+                marketPriceResDTO.setLower_limit_price(lowerLimitPrice);
+                marketPriceResDTO.setUpper_limit_price(upperLimitPrice);
+                marketPriceResDTO.setAverage_change(averageChange);
+                marketPriceResDTO.setSales_vs_rent_price(salesVsRentPrice);
+
+                marketPriceList.add(marketPriceResDTO);
+            }
         }
+
         driver.quit();
     }
 
