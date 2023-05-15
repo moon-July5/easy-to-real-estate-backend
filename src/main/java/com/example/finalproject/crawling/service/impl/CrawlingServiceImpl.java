@@ -362,7 +362,7 @@ public class CrawlingServiceImpl implements CrawlingService {
 
     private ChromeDriver option() {
         System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
-        System.setProperty("webdriver.chrome.whitelistedIps", "");
+        //System.setProperty("webdriver.chrome.whitelistedIps", "");
         //System.setProperty("webdriver.chrome.driver", "C:\\chromedriver_win32\\chromedriver.exe");
 
         ChromeOptions options = new ChromeOptions();
