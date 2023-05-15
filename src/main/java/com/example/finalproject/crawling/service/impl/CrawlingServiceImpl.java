@@ -80,7 +80,8 @@ public class CrawlingServiceImpl implements CrawlingService {
         String floor = document.selectXpath("//*[@id=\"detailContents1\"]/div[1]/table/tbody/tr[1]/td[2]").text();
 
         Elements complexInfo = document.select("div.list_contents div.list_fixed div.list_complex_info dl.complex_feature dd");
-        String household = complexInfo.get(0).text()  + " / " + complexInfo.get(1).text();
+        String units = complexInfo.get(0).text();
+        String dong = complexInfo.get(1).text();
 
         Elements widthInfo = document.select("div.detail_box--floor_plan span.detail_sorting_width a.detail_sorting_tab");
 
@@ -318,8 +319,10 @@ public class CrawlingServiceImpl implements CrawlingService {
         summary.put("lower_limit_price", actTransacAndMarketPriceList.get(0).getLower_limit_price());
         summary.put("upper_limit_price", actTransacAndMarketPriceList.get(0).getUpper_limit_price());
         summary.put("actual_transaction_price", actualTransactionPriceList.get(0).getPrice() + "("+actualTransactionPriceList.get(0).getContract_date()+", "+actualTransactionPriceList.get(0).getFloor()+"층)");
-        summary.put("household", household);
-        summary.put("floor", getCurrentFloor(pdfParsingResDTO.getAddress())+" / "+getFloor(floor));
+        summary.put("units", units);
+        summary.put("dong", dong);
+        summary.put("floors", getCurrentFloor(pdfParsingResDTO.getAddress()));
+        summary.put("total_floors", getFloor(floor));
         summary.put("type", complexType);
     }
 
@@ -376,7 +379,6 @@ public class CrawlingServiceImpl implements CrawlingService {
         options.addArguments("--no-sandbox");
         options.addArguments("disable-dev-shm-usage");
         options.addArguments("lang=ko");
-
         ChromeDriver driver = new ChromeDriver(options);
 
         return driver;
