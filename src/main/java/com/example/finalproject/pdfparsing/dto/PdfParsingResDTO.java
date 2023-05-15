@@ -2,9 +2,13 @@ package com.example.finalproject.pdfparsing.dto;
 
 
 
+import com.example.finalproject.crawling.dto.ActTransacAndMarketPriceResDTO;
+import com.example.finalproject.crawling.dto.ActualTransactionPriceResDTO;
+import com.example.finalproject.crawling.dto.MarketPriceResDTO;
 import lombok.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -33,6 +37,12 @@ public class PdfParsingResDTO {
     private String registry_number; // 등기부등본 고유번호
 
     private String address; // 매물의 일반주소지
+
+    private List<ActTransacAndMarketPriceResDTO> actTransacAndMarketPrice; // 실거래가 및 시세 정보
+
+    private List<ActualTransactionPriceResDTO> actualTransactionPrice; // 실거래가 정보
+
+    private List<MarketPriceResDTO> marketPrice; // 시세 정보
 
 
 //    private String uniqueNumber; // 고유번호

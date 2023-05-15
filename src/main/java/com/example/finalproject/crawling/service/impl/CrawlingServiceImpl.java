@@ -18,6 +18,7 @@ import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -74,6 +75,12 @@ public class CrawlingServiceImpl implements CrawlingService {
 
         // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
         document = Jsoup.parse(driver.getPageSource());
+
+        String complexType = document.selectXpath("//*[@id=\"summaryInfo\"]/div[1]/span").text();
+        String floor = document.selectXpath("//*[@id=\"detailContents1\"]/div[1]/table/tbody/tr[1]/td[2]").text();
+
+        Elements complexInfo = document.select("div.list_contents div.list_fixed div.list_complex_info dl.complex_feature dd");
+        String household = complexInfo.get(0).text()  + " / " + complexInfo.get(1).text();
 
         Elements widthInfo = document.select("div.detail_box--floor_plan span.detail_sorting_width a.detail_sorting_tab");
 
@@ -146,39 +153,45 @@ public class CrawlingServiceImpl implements CrawlingService {
 
             String type = sellingType.get(i).text();
 
+
             Boolean displayOk = driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).isDisplayed();
 
             int count = 0;
             // 시세 더보기 버튼이 존재하면 클릭
             while(displayOk) {
-                driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).click();
-                //wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.detail_price_data button.detail_data_more"))).click();
-
-                // 탭 클릭때마다 0.1초 쉼
                 try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).click();
+                    //wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.detail_price_data button.detail_data_more"))).click();
 
-                count++;
+                    // 탭 클릭때마다 0.1초 쉼
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
-                displayOk = driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).isDisplayed();
+                    count++;
 
-                // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
-                document = Jsoup.parse(driver.getPageSource());
+                    // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
+                    document = Jsoup.parse(driver.getPageSource());
 
-                if(count>6)
+                    displayOk = driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).isDisplayed();
+
+                    if (count > 4)
+                        break;
+                } catch (NoSuchElementException ne){
                     break;
+                }
             }
 
 
-            Elements actualPrice = document.select("div.detail_price_data table.detail_data_table tbody tr");
+            Elements actualPrice = document.select("div.detail_price_data table.type_real tbody tr");
 
             for(int j=0; j<actualPrice.size(); j++){
                 Element row = actualPrice.get(j);
                 // 계약월
                 String contractDate = row.select("th").text().replaceAll("\\.", "-");
+
                 // 매매가 정보들(계약월에 따라 정보가 여러 개 존재할 수 있음)
                 Elements priceInfos = row.select("td div.detail_table_info div.detail_info_inner span.detail_info_item");
 
@@ -202,25 +215,29 @@ public class CrawlingServiceImpl implements CrawlingService {
             count = 0;
             // 시세 더보기 버튼이 존재하면 클릭
             while(displayOk) {
-                driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).click();
-                //wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.detail_price_data button.detail_data_more"))).click();
-
-                // 탭 클릭때마다 0.1초 쉼
                 try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).click();
+                    //wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.detail_price_data button.detail_data_more"))).click();
 
-                count++;
+                    // 탭 클릭때마다 0.1초 쉼
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
-                displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
+                    count++;
 
-                // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
-                document = Jsoup.parse(driver.getPageSource());
+                    displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
 
-                if(count>6)
+                    // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
+                    document = Jsoup.parse(driver.getPageSource());
+
+                    if (count > 13)
+                        break;
+                } catch (NoSuchElementException ne){
                     break;
+                }
             }
 
             Elements marketPrice = document.select("div.detail_price_data table.type_price tbody tr");
@@ -294,6 +311,16 @@ public class CrawlingServiceImpl implements CrawlingService {
         }
 
         driver.quit();
+
+        pdfParsingResDTO.setActTransacAndMarketPrice(actTransacAndMarketPriceList);
+        pdfParsingResDTO.setActualTransactionPrice(actualTransactionPriceList);
+        pdfParsingResDTO.setMarketPrice(marketPriceList);
+        summary.put("lower_limit_price", actTransacAndMarketPriceList.get(0).getLower_limit_price());
+        summary.put("upper_limit_price", actTransacAndMarketPriceList.get(0).getUpper_limit_price());
+        summary.put("actual_transaction_price", actualTransactionPriceList.get(0).getPrice() + "("+actualTransactionPriceList.get(0).getContract_date()+", "+actualTransactionPriceList.get(0).getFloor()+"층)");
+        summary.put("household", household);
+        summary.put("floor", getCurrentFloor(pdfParsingResDTO.getAddress())+" / "+getFloor(floor));
+        summary.put("type", complexType);
     }
 
     // 매물의 고유 번호 추출
@@ -318,18 +345,15 @@ public class CrawlingServiceImpl implements CrawlingService {
         JSONArray array = (JSONArray) object.get("complexList");
 
         String number = "";
-        boolean check = false;
 
-        while(!check) {
-            for (int i = 0; i < array.size(); i++) {
-                object = (JSONObject) array.get(i);
+        for (int i = 0; i < array.size(); i++) {
+            object = (JSONObject) array.get(i);
 
-                String complexName = object.get("complexName").toString().replaceAll("\\(.*\\)", "");
+            String complexName = object.get("complexName").toString().replaceAll("\\(.*\\)", "");
 
-                if (aptName.contains(complexName)){
-                    number = object.get("complexNo").toString();
-                    check = true;
-                }
+            if (aptName.contains(complexName)){
+                number = object.get("complexNo").toString();
+                break;
             }
         }
 
@@ -337,8 +361,8 @@ public class CrawlingServiceImpl implements CrawlingService {
     }
 
     private ChromeDriver option() {
-        //System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
-        System.setProperty("webdriver.chrome.driver", "C:\\chromedriver_win32\\chromedriver.exe");
+        System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
+        //System.setProperty("webdriver.chrome.driver", "C:\\chromedriver_win32\\chromedriver.exe");
 
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless");
@@ -353,7 +377,33 @@ public class CrawlingServiceImpl implements CrawlingService {
 
         return driver;
     }
+    // 최고층만 추출
+    private String getFloor(String input){
+        Pattern pattern = Pattern.compile("\\d+층/(\\d+층)"); // 정규표현식 패턴 설정
+        Matcher matcher = pattern.matcher(input);
 
+        String result = null;
+
+        if (matcher.find()) {
+            result = matcher.group(1);
+        }
+
+        return result;
+    }
+
+    // 현재 매물의 층만 추출
+    private String getCurrentFloor(String input) {
+        Pattern pattern = Pattern.compile("제(\\d+)층");
+        Matcher matcher = pattern.matcher(input);
+
+        String floor = "";
+
+        if (matcher.find()) {
+            floor = matcher.group(1);
+        }
+
+        return floor;
+    }
     // 전용 면적 값만 추출하기 위한 메서드
     private String getArea(String input){
         // 소수점 포함된 숫자를 추출하는 정규표현식
