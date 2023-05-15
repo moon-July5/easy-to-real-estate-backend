@@ -26,6 +26,7 @@ public class PdfParsingController {
     public CommonResponse pdfParsing(
             @RequestPart("multipartFile")
             @RequestParam(value = "multipartFile", required = false) MultipartFile multipartFile) throws IOException {
+
         return pdfParsingService.pdfParsing(multipartFile);
 
     }
