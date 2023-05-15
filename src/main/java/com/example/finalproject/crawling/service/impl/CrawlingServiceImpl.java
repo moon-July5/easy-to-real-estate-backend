@@ -373,6 +373,9 @@ public class CrawlingServiceImpl implements CrawlingService {
         options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
         options.addArguments("--remote-allow-origins=*");
         options.addArguments("window-size=1920x1080"); // 이거 안해주면 headless 때문에 안되고 useragent 넣어줘도 안됨
+        options.addArguments("--no-sandbox");
+        options.addArguments("disable-dev-shm-usage");
+        options.addArguments("lang=ko");
 
         ChromeDriver driver = new ChromeDriver(options);
 
