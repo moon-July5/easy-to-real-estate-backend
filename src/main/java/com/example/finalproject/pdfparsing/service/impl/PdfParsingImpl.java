@@ -93,8 +93,22 @@ public class PdfParsingImpl implements PdfParsingService {
     // address = 주소;
     public void craw(PdfParsingResDTO pdfParsingResDTO) throws Exception {
         String number = crawlingService.getComplexesNumber(pdfParsingResDTO.getAddress());
-        crawlingService.crawling(number, pdfParsingResDTO);
-
+        if(!number.equals("")) {
+            crawlingService.crawling(number, pdfParsingResDTO);
+        } else {
+            HashMap<String, String> summary = pdfParsingResDTO.getSummary();
+            pdfParsingResDTO.setMarketPrice(null);
+            pdfParsingResDTO.setActualTransactionPrice(null);
+            pdfParsingResDTO.setActTransacAndMarketPrice(null);
+            summary.put("lower_limit_price", null);
+            summary.put("upper_limit_price", null);
+            summary.put("actual_transaction_price", null);
+            summary.put("units", null);
+            summary.put("dong", null);
+            summary.put("floors", null);
+            summary.put("total_floors", null);
+            summary.put("type", null);
+        }
     }
 
     /**
