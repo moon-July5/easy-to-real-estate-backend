@@ -4,6 +4,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import com.example.finalproject.crawling.service.CrawlingService;
+import com.example.finalproject.crawling.service.impl.CrawlingServiceImpl;
 import com.example.finalproject.global.exception.KeywordValidationException;
 import com.example.finalproject.global.exception.PDFValidationException;
 import com.example.finalproject.global.response.CommonResponse;
@@ -35,6 +37,7 @@ public class PdfParsingImpl implements PdfParsingService {
 
     private final AmazonS3 amazonS3Client;
     private final ResponseService responseService;
+    private final CrawlingService crawlingService;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -75,6 +78,7 @@ public class PdfParsingImpl implements PdfParsingService {
                     throw new PDFValidationException();
                 }
                 withoutSummaryParsing(pdfText, pdfParsingResDTO);
+                craw(pdfParsingResDTO);
             } catch (Exception e) {
                 throw new KeywordValidationException();
             }
@@ -83,6 +87,28 @@ public class PdfParsingImpl implements PdfParsingService {
             return responseService.getFailResponse(404, "파일형식이 잘못되었습니다");
         }
 
+    }
+
+    // pdf주소가져오는 메서드;
+    // address = 주소;
+    public void craw(PdfParsingResDTO pdfParsingResDTO) throws Exception {
+        String number = crawlingService.getComplexesNumber(pdfParsingResDTO.getAddress());
+        if(!number.equals("")) {
+            crawlingService.crawling(number, pdfParsingResDTO);
+        } else {
+            HashMap<String, String> summary = pdfParsingResDTO.getSummary();
+            pdfParsingResDTO.setMarketPrice(null);
+            pdfParsingResDTO.setActualTransactionPrice(null);
+            pdfParsingResDTO.setActTransacAndMarketPrice(null);
+            summary.put("lower_limit_price", null);
+            summary.put("upper_limit_price", null);
+            summary.put("actual_transaction_price", null);
+            summary.put("units", null);
+            summary.put("dong", null);
+            summary.put("floors", null);
+            summary.put("total_floors", null);
+            summary.put("type", null);
+        }
     }
 
     /**

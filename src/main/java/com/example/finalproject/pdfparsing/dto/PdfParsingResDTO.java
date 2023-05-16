@@ -2,9 +2,13 @@ package com.example.finalproject.pdfparsing.dto;
 
 
 
+import com.example.finalproject.crawling.dto.ActTransacAndMarketPriceResDTO;
+import com.example.finalproject.crawling.dto.ActualTransactionPriceResDTO;
+import com.example.finalproject.crawling.dto.MarketPriceResDTO;
 import lombok.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -27,6 +31,12 @@ public class PdfParsingResDTO {
     private Long collateral_amount; // 채권최고액 합(담보총액)
 
     private int collateral_count; // 채권최고액 건수(담보건수)
+
+    private List<ActTransacAndMarketPriceResDTO> actTransacAndMarketPrice; // 실거래가 및 시세 정보
+
+    private List<ActualTransactionPriceResDTO> actualTransactionPrice; // 실거래가 정보
+
+    private List<MarketPriceResDTO> marketPrice; // 시세 정보
 
 //    private String uniqueNumber; // 고유번호
 //
