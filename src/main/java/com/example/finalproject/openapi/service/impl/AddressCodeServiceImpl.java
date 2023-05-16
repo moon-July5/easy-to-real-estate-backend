@@ -90,7 +90,7 @@ public class AddressCodeServiceImpl implements AddressCodeService {
             count = 4;
         }
 
-        if(addressList[count].endsWith("리"))
+        if(addressList[count-1].endsWith("리"))
             count = 3;
 
         for (int i = 0; i < count; i++) {

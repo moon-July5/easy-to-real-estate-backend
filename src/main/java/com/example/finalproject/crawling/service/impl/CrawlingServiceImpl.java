@@ -8,6 +8,7 @@ import com.example.finalproject.global.response.ResponseService;
 import com.example.finalproject.openapi.service.AddressCodeService;
 import com.example.finalproject.pdfparsing.dto.PdfParsingResDTO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Log4j2
 @RequiredArgsConstructor
 @Service
 public class CrawlingServiceImpl implements CrawlingService {
@@ -155,120 +157,135 @@ public class CrawlingServiceImpl implements CrawlingService {
 
             String type = sellingType.get(i).text();
 
+            int isActualPrice = document.select("div.detail_price_data table.type_real").size();
 
-            Boolean displayOk = driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).isDisplayed();
+            if(isActualPrice!=0) {
+                //int displayOk = driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).isDisplayed();
+                int isButton = document.selectXpath("//*[@id=\"tabpanel1\"]/div[5]/button").size();
 
-            int count = 0;
-            // 시세 더보기 버튼이 존재하면 클릭
-            while(displayOk) {
-                try {
-                    driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).click();
-                    //wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.detail_price_data button.detail_data_more"))).click();
-
-                    // 탭 클릭때마다 0.1초 쉼
+                int count = 0;
+                // 시세 더보기 버튼이 존재하면 클릭
+                while (isButton!=0) {
                     try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).click();
+                        //wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.detail_price_data button.detail_data_more"))).click();
+
+                        // 탭 클릭때마다 0.1초 쉼
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        count++;
+
+                        // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
+                        document = Jsoup.parse(driver.getPageSource());
+
+                        //displayOk = driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).isDisplayed();
+                        isButton = document.selectXpath("//*[@id=\"tabpanel1\"]/div[5]/button").size();
+
+                        if (count > 10)
+                            break;
+                    } catch (NoSuchElementException ne) {
+                        break;
+                    }
+                }
+
+                Elements actualPrice = document.select("div.detail_price_data table.type_real tbody tr");
+
+                for (int j = 0; j < actualPrice.size(); j++) {
+                    Element row = actualPrice.get(j);
+
+                    // 계약월
+                    String contractDate = row.select("th").text().replaceAll("\\.", "-");
+
+                    // 매매가 정보들(계약월에 따라 정보가 여러 개 존재할 수 있음)
+                    Elements priceInfos = row.select("td div.detail_table_info div.detail_info_inner span.detail_info_item");
+
+                    for (int k = 0; k < priceInfos.size(); k++) {
+                        ActualTransactionPriceResDTO actualTransactionPrice = new ActualTransactionPriceResDTO();
+
+                        String info = priceInfos.get(k).text();
+                        String[] dayAndFloor = getDayAndFloor(info);
+
+                        actualTransactionPrice.setTransaction_type(type);
+                        actualTransactionPrice.setPrice(getPrice(info));
+                        actualTransactionPrice.setContract_date(contractDate + dayAndFloor[0]);
+                        actualTransactionPrice.setFloor(dayAndFloor[1]);
+
+                        actualTransactionPriceList.add(actualTransactionPrice);
+                    }
+                }
+            } else {
+                pdfParsingResDTO.setActualTransactionPrice(null);
+            }
+
+            int isMarketPrice = document.select("div.detail_price_data table.type_price").size();
+
+            if(isMarketPrice!=0) {
+                //boolean displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
+                int isButton = document.selectXpath("//*[@id=\"tabpanel1\"]/div[7]/button").size();
+
+                int count = 0;
+                // 시세 더보기 버튼이 존재하면 클릭
+                while (isButton!=0) {
+                    try {
+                        driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).click();
+                        //wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.detail_price_data button.detail_data_more"))).click();
+
+                        // 탭 클릭때마다 0.1초 쉼
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        count++;
+
+                        //displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
+                        isButton = document.selectXpath("//*[@id=\"tabpanel1\"]/div[7]/button").size();
+
+                        // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
+                        document = Jsoup.parse(driver.getPageSource());
+
+                        if (count > 13)
+                            break;
+                    } catch (NoSuchElementException ne) {
+                        break;
+                    }
+                }
+
+                Elements marketPrice = document.select("div.detail_price_data table.type_price tbody tr");
+
+                for (int j = 0; j < marketPrice.size(); j++) {
+                    MarketPriceResDTO marketPriceResDTO = new MarketPriceResDTO();
+
+                    Element row = marketPrice.get(j);
+
+                    String referenceDate = row.select("th").text().replaceAll("\\.", "-").substring(0, 10);
+                    String lowerLimitPrice = row.select("td").get(0).text();
+                    String upperLimitPrice = row.select("td").get(1).text();
+                    String averageChange = null;
+                    if (row.select("td").get(2).text().equals("-")) {
+                        averageChange = row.select("td").get(2).text();
+                    } else {
+                        averageChange = row.select("td strong.detail_table_price span.detail_price_text").text();
                     }
 
-                    count++;
+                    String salesVsRentPrice = row.select("td").get(3).text();
 
-                    // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
-                    document = Jsoup.parse(driver.getPageSource());
+                    marketPriceResDTO.setReference_date(referenceDate);
+                    marketPriceResDTO.setTransaction_type(type);
+                    marketPriceResDTO.setLower_limit_price(lowerLimitPrice);
+                    marketPriceResDTO.setUpper_limit_price(upperLimitPrice);
+                    marketPriceResDTO.setAverage_change(averageChange);
+                    marketPriceResDTO.setSales_vs_rent_price(salesVsRentPrice);
 
-                    displayOk = driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).isDisplayed();
-
-                    if (count > 4)
-                        break;
-                } catch (NoSuchElementException ne){
-                    break;
+                    marketPriceList.add(marketPriceResDTO);
                 }
-            }
-
-
-            Elements actualPrice = document.select("div.detail_price_data table.type_real tbody tr");
-
-            for(int j=0; j<actualPrice.size(); j++){
-                Element row = actualPrice.get(j);
-                // 계약월
-                String contractDate = row.select("th").text().replaceAll("\\.", "-");
-
-                // 매매가 정보들(계약월에 따라 정보가 여러 개 존재할 수 있음)
-                Elements priceInfos = row.select("td div.detail_table_info div.detail_info_inner span.detail_info_item");
-
-                for(int k=0; k<priceInfos.size(); k++){
-                    ActualTransactionPriceResDTO actualTransactionPrice = new ActualTransactionPriceResDTO();
-
-                    String info = priceInfos.get(k).text();
-                    String[] dayAndFloor = getDayAndFloor(info);
-
-                    actualTransactionPrice.setTransaction_type(type);
-                    actualTransactionPrice.setPrice(getPrice(info));
-                    actualTransactionPrice.setContract_date(contractDate+dayAndFloor[0]);
-                    actualTransactionPrice.setFloor(dayAndFloor[1]);
-
-                    actualTransactionPriceList.add(actualTransactionPrice);
-                }
-            }
-
-            displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
-
-            count = 0;
-            // 시세 더보기 버튼이 존재하면 클릭
-            while(displayOk) {
-                try {
-                    driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).click();
-                    //wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.detail_price_data button.detail_data_more"))).click();
-
-                    // 탭 클릭때마다 0.1초 쉼
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    count++;
-
-                    displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
-
-                    // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
-                    document = Jsoup.parse(driver.getPageSource());
-
-                    if (count > 13)
-                        break;
-                } catch (NoSuchElementException ne){
-                    break;
-                }
-            }
-
-            Elements marketPrice = document.select("div.detail_price_data table.type_price tbody tr");
-
-            for(int j=0; j<marketPrice.size(); j++){
-                MarketPriceResDTO marketPriceResDTO = new MarketPriceResDTO();
-
-                Element row = marketPrice.get(j);
-
-                String referenceDate = row.select("th").text().replaceAll("\\.", "-").substring(0, 10);
-                String lowerLimitPrice = row.select("td").get(0).text();
-                String upperLimitPrice = row.select("td").get(1).text();
-                String averageChange = null;
-                if(row.select("td").get(2).text().equals("-")){
-                    averageChange = row.select("td").get(2).text();
-                } else {
-                    averageChange = row.select("td strong.detail_table_price span.detail_price_text").text();
-                }
-
-                String salesVsRentPrice = row.select("td").get(3).text();
-
-                marketPriceResDTO.setReference_date(referenceDate);
-                marketPriceResDTO.setTransaction_type(type);
-                marketPriceResDTO.setLower_limit_price(lowerLimitPrice);
-                marketPriceResDTO.setUpper_limit_price(upperLimitPrice);
-                marketPriceResDTO.setAverage_change(averageChange);
-                marketPriceResDTO.setSales_vs_rent_price(salesVsRentPrice);
-
-                marketPriceList.add(marketPriceResDTO);
+            } else {
+                pdfParsingResDTO.setMarketPrice(null);
             }
 
             ActTransacAndMarketPriceResDTO actTransacAndMarketPriceResDTO = new ActTransacAndMarketPriceResDTO();
@@ -364,26 +381,6 @@ public class CrawlingServiceImpl implements CrawlingService {
         return number;
     }
 
-    private ChromeDriver option() {
-        System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
-        //System.setProperty("webdriver.chrome.whitelistedIps", "");
-        //System.setProperty("webdriver.chrome.driver", "C:\\chromedriver_win32\\chromedriver.exe");
-
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless");
-        options.addArguments("disable-gpu");
-        options.addArguments("--disable-gpu");
-        options.addArguments("--disable-popup-blocking");       //팝업안띄움
-        options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
-        options.addArguments("--remote-allow-origins=*");
-        options.addArguments("window-size=1920x1080"); // 이거 안해주면 headless 때문에 안되고 useragent 넣어줘도 안됨
-        options.addArguments("--no-sandbox");
-        options.addArguments("disable-dev-shm-usage");
-        options.addArguments("lang=ko");
-        ChromeDriver driver = new ChromeDriver(options);
-
-        return driver;
-    }
     // 최고층만 추출
     private String getFloor(String input){
         Pattern pattern = Pattern.compile("\\d+층/(\\d+층)"); // 정규표현식 패턴 설정
@@ -466,5 +463,26 @@ public class CrawlingServiceImpl implements CrawlingService {
         }
 
         return result;
+    }
+
+    private ChromeDriver option() {
+        System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
+        //System.setProperty("webdriver.chrome.whitelistedIps", "");
+        //System.setProperty("webdriver.chrome.driver", "C:\\chromedriver_win32\\chromedriver.exe");
+
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless");
+        options.addArguments("disable-gpu");
+        options.addArguments("--disable-gpu");
+        options.addArguments("--disable-popup-blocking");       //팝업안띄움
+        options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
+        options.addArguments("--remote-allow-origins=*");
+        options.addArguments("window-size=1920x1080"); // 이거 안해주면 headless 때문에 안되고 useragent 넣어줘도 안됨
+        options.addArguments("--no-sandbox");
+        options.addArguments("disable-dev-shm-usage");
+        options.addArguments("lang=ko");
+        ChromeDriver driver = new ChromeDriver(options);
+
+        return driver;
     }
 }
