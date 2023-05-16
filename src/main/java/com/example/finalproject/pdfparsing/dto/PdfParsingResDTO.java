@@ -32,18 +32,11 @@ public class PdfParsingResDTO {
 
     private int collateral_count; // 채권최고액 건수(담보건수)
 
-    private String viewed_at; // 등기부등본 열람일시
-
-    private String registry_number; // 등기부등본 고유번호
-
-    private String address; // 매물의 일반주소지
-
     private List<ActTransacAndMarketPriceResDTO> actTransacAndMarketPrice; // 실거래가 및 시세 정보
 
     private List<ActualTransactionPriceResDTO> actualTransactionPrice; // 실거래가 정보
 
     private List<MarketPriceResDTO> marketPrice; // 시세 정보
-
 
 //    private String uniqueNumber; // 고유번호
 //
