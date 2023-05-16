@@ -10,6 +10,7 @@ import com.example.finalproject.global.exception.KeywordValidationException;
 import com.example.finalproject.global.exception.PDFValidationException;
 import com.example.finalproject.global.response.CommonResponse;
 import com.example.finalproject.global.response.ResponseService;
+import com.example.finalproject.openapi.service.AddressCodeService;
 import com.example.finalproject.pdfparsing.dto.PdfParsingResDTO;
 import com.example.finalproject.pdfparsing.service.PdfParsingService;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class PdfParsingImpl implements PdfParsingService {
     private final AmazonS3 amazonS3Client;
     private final ResponseService responseService;
     private final CrawlingService crawlingService;
+    private final AddressCodeService addressCodeService;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -169,7 +171,7 @@ public class PdfParsingImpl implements PdfParsingService {
 
         summary.put("viewedAt", viewedAt);
         summary.put("address", numberAddress[1]);
-        summary.put("newAddress", "");
+        summary.put("newAddress", addressCodeService.findJibun(numberAddress[1]));
         summary.put("registryNumber", numberAddress[0]);
         summary.put("area", area);
         summary.put("pyeong", pyeong);
