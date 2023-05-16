@@ -277,6 +277,7 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 매물요약 - 매물일반주소지, 고유번호 파싱
      * @param pdfSplitParts
+     * @return
      */
     public String[] numberAddressFloorParsing(String pdfSplitParts) {
 
@@ -292,6 +293,7 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 매물요약 - 열람일시 파싱
      * @param pdfSplitParts
+     * @return
      */
     public String printingDateParsing(String pdfSplitParts) {
         String[] splitted = pdfSplitParts.split("\n");
@@ -305,6 +307,7 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 매물요약 - 면적, 평수 파싱
      * @param pdfText
+     * @return
      */
     public String exclusiveAreaParsing(String pdfText) {
 
@@ -327,6 +330,7 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 매물요약 - 대지권 유무 파싱
      * @param pdfText
+     * @return
      */
     public String landRightParsing(String pdfText){
 
@@ -342,8 +346,9 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 매물요약 - 지분전부이전 파싱
+     * 매물요약 - 소유권이전, 지분전부이전 파싱
      * @param pdfText
+     * @return
      */
     public String[] full_transfer_dateParsing(String pdfText) {
 
@@ -435,6 +440,7 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 요약 접수정보 파싱 - 을구
      * @param pdfSplitParts
+     * @return
      */
     public HashMap<Integer, String> acceptParsing(String pdfSplitParts){
 
@@ -466,9 +472,10 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * TODO 요약 담보 총액 구하기 - 을구
+     * 요약 담보 총액 구하기 - 을구
      * @param pdfSplitParts
      * @param pdfParsingResDTO
+     * @return
      */
     public HashMap<Integer, String> jeonseMortgageParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
         long sum_mortgageBond = 0; // 채권최고액 합
@@ -513,6 +520,7 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 요약 주요등기사항 중 회사/사람 파싱 - 갑구&을구
      * @param pdfSplitParts
+     * @return
      */
     public HashMap<Integer, String> attachmentNameParsing(String pdfSplitParts) {
 
