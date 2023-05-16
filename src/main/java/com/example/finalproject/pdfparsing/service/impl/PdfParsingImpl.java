@@ -92,11 +92,11 @@ public class PdfParsingImpl implements PdfParsingService {
     // pdf주소가져오는 메서드;
     // address = 주소;
     public void craw(PdfParsingResDTO pdfParsingResDTO) throws Exception {
-        String number = crawlingService.getComplexesNumber(pdfParsingResDTO.getAddress());
+        HashMap<String, String> summary = pdfParsingResDTO.getSummary();
+        String number = crawlingService.getComplexesNumber(summary.get("address"));
         if(!number.equals("")) {
             crawlingService.crawling(number, pdfParsingResDTO);
         } else {
-            HashMap<String, String> summary = pdfParsingResDTO.getSummary();
             pdfParsingResDTO.setMarketPrice(null);
             pdfParsingResDTO.setActualTransactionPrice(null);
             pdfParsingResDTO.setActTransacAndMarketPrice(null);

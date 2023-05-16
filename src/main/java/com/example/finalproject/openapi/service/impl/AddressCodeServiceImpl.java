@@ -55,6 +55,28 @@ public class AddressCodeServiceImpl implements AddressCodeService {
         return addressList[count + 1].trim();
     }
 
+    @Override
+    public String findJibun(String address) {
+        String[] addressList = address.split(" ");
+
+        int count = 0;
+
+        if (addressList[2].endsWith("동")) {
+            count = 3;
+        } else {
+            count = 4;
+        }
+
+        String result = null;
+
+        if(count==3)
+            result = addressList[0]+" "+addressList[1]+" "+addressList[2]+" "+addressList[3];
+        else if(count==4)
+            result = addressList[0]+" "+addressList[1]+" "+addressList[2]+" "+addressList[3]+" "+addressList[4];
+
+        return result;
+    }
+
     // 법정동 코드 조회
     @Override
     public String findAddressCode(String address) {

@@ -8,5 +8,5 @@ public interface AddressCodeService {
 
     public String findAddressCode(String address);
     public String findAptName(String address);
-
+    public String findJibun(String address);
 }

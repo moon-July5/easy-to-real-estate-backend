@@ -48,6 +48,7 @@ public class CrawlingServiceImpl implements CrawlingService {
 
         HashMap<String, String> summary = pdfParsingResDTO.getSummary();
         String area = summary.get("area"); // 전용 면적
+        String address = summary.get("address");
 
         // 스크립트를 사용하기 위한 캐스팅
         JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -321,7 +322,7 @@ public class CrawlingServiceImpl implements CrawlingService {
         summary.put("actual_transaction_price", actualTransactionPriceList.get(0).getPrice() + "("+actualTransactionPriceList.get(0).getContract_date()+", "+actualTransactionPriceList.get(0).getFloor()+"층)");
         summary.put("units", units);
         summary.put("dong", dong);
-        summary.put("floors", getCurrentFloor(pdfParsingResDTO.getAddress()));
+        summary.put("floors", getCurrentFloor(address));
         summary.put("total_floors", getFloor(floor));
         summary.put("type", complexType);
     }
