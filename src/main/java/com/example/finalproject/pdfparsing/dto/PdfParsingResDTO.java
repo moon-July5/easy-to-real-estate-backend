@@ -28,13 +28,6 @@ public class PdfParsingResDTO {
 
     private int collateral_count; // 채권최고액 건수(담보건수)
 
-    private String viewed_at; // 등기부등본 열람일시
-
-    private String registry_number; // 등기부등본 고유번호
-
-    private String address; // 매물의 일반주소지
-
-
 //    private String uniqueNumber; // 고유번호
 //
 //    private String maxFloor; //최고층수

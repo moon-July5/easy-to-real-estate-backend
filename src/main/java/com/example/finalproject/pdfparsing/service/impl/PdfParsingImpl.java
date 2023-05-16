@@ -95,8 +95,8 @@ public class PdfParsingImpl implements PdfParsingService {
         String[] splitted = pdfText.split("주요 등기사항 요약", 2);
         String[] additional_split = splitted[splitted.length - 1].split("1[.]|2[.]|3[.]", 4);
 
-        numberAddressFloorParsing(additional_split[0], pdfParsingResDTO);
-        printingDateParsing(additional_split[3], pdfParsingResDTO);
+        numberAddressFloorParsing(additional_split[0]);
+        printingDateParsing(additional_split[3]);
         ownerParsing(additional_split[1], pdfParsingResDTO);
         withoutOwnerParsing(additional_split[2], pdfParsingResDTO);
         rights_other_than_ownershipParsing(additional_split[3], pdfParsingResDTO);
@@ -129,22 +129,28 @@ public class PdfParsingImpl implements PdfParsingService {
      */
     public void summaryParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO){
 
+        String[] splitted = pdfText.split("주요 등기사항 요약", 2);
+        String[] additional_split = splitted[splitted.length - 1].split("1[.]|2[.]|3[.]", 4);
+
         HashMap<String, String> summary = new HashMap<>();
-        String area = exclusiveAreaParsing(pdfText, pdfParsingResDTO);
+        String viewedAt = printingDateParsing(additional_split[3]);
+        String[] numberAddress = numberAddressFloorParsing(additional_split[0]);
+        String area = exclusiveAreaParsing(pdfText);
         Double size = Double.parseDouble(area) * 0.3025;
         String pyeong = String.format("%.1f", size);
-        String land_rights = landRightParsing(pdfText, pdfParsingResDTO);
-        String full_transfer_date = full_transfer_dateParsing(pdfText, pdfParsingResDTO);
+        String land_rights = landRightParsing(pdfText);
+        String[] full_transfer_date = full_transfer_dateParsing(pdfText);
 
-        summary.put("viewedAt", pdfParsingResDTO.getViewed_at());
-        summary.put("address", pdfParsingResDTO.getAddress());
-        //매물 기존 주소는  Ownership_list의 "address" 사용하시면 됩니다!
-        summary.put("registryNumber", pdfParsingResDTO.getRegistry_number());
+        summary.put("viewedAt", viewedAt);
+        summary.put("address", numberAddress[1]);
+        summary.put("newAddress", "");
+        summary.put("registryNumber", numberAddress[0]);
         summary.put("area", area);
         summary.put("pyeong", pyeong);
-        //소유자 이름과 지분은 Ownership_list의 "name"과 "percent" 사용하시면 됩니다!
+        summary.put("owner", "");
         summary.put("landRights", land_rights);
-        summary.put("fullTransfer", full_transfer_date);
+        summary.put("fullTransfer", full_transfer_date[0]);
+        summary.put("ownerTransfer", full_transfer_date[1]);
 
         pdfParsingResDTO.setSummary(summary);
     }
@@ -213,7 +219,7 @@ public class PdfParsingImpl implements PdfParsingService {
             String accept = acceptList.get(i);
             ownerMap.put("accept", accept);
 
-            HashMap<Integer, String> attachmentMoney = attachmentMoneyParsing(pdfSplitParts, pdfParsingResDTO);
+            HashMap<Integer, String> attachmentMoney = attachmentMoneyParsing(pdfSplitParts);
             String money = attachmentMoney.get(i);
             HashMap<Integer, String> attachmentName = attachmentNameParsing(pdfSplitParts);
             String name = attachmentName.get(i);
@@ -271,38 +277,36 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 매물요약 - 매물일반주소지, 고유번호 파싱
      * @param pdfSplitParts
-     * @param pdfParsingResDTO
      */
-    public void numberAddressFloorParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
+    public String[] numberAddressFloorParsing(String pdfSplitParts) {
 
         String[] splitted = pdfSplitParts.split("바랍니다.", 2);
         String[] additional_split = splitted[splitted.length - 1].split("\\[집합건물]|\\[건물]", 2);
+        String[] match = new String[2];
 
-        pdfParsingResDTO.setRegistry_number(additional_split[0].substring(6).trim());
-        pdfParsingResDTO.setAddress(additional_split[additional_split.length - 1].trim());
-
+        match[0] = additional_split[0].substring(6).trim(); // 고유번호
+        match[1] = additional_split[additional_split.length - 1].trim(); // 지번주소
+        return match;
     }
 
     /**
      * 매물요약 - 열람일시 파싱
      * @param pdfSplitParts
-     * @param pdfParsingResDTO
      */
-    public void printingDateParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
+    public String printingDateParsing(String pdfSplitParts) {
         String[] splitted = pdfSplitParts.split("\n");
         String printTime = splitted[splitted.length - 1].substring(7).trim();
         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH시 mm분 ss초");
         LocalDateTime dt = LocalDateTime.parse(printTime, inputFormatter);
         DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
-        pdfParsingResDTO.setViewed_at(dt.format(outputFormatter));
+        return dt.format(outputFormatter);
     }
 
     /**
      * 매물요약 - 면적, 평수 파싱
      * @param pdfText
-     * @param pdfParsingResDTO
      */
-    public String exclusiveAreaParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO) {
+    public String exclusiveAreaParsing(String pdfText) {
 
         String[] splitted = pdfText.split("( 전유부분의 건물의 표시 )", 2);
         String[] additional_split = splitted[splitted.length - 1].split("( 대지권의 표시 )");
@@ -323,9 +327,8 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 매물요약 - 대지권 유무 파싱
      * @param pdfText
-     * @param pdfParsingResDTO
      */
-    public String landRightParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO){
+    public String landRightParsing(String pdfText){
 
         String[] splitted = pdfText.split("( 전유부분의 건물의 표시 )", 2);
         String[] additional_split = splitted[splitted.length - 1].split("( 대지권의 표시 )");
@@ -341,21 +344,31 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 매물요약 - 지분전부이전 파싱
      * @param pdfText
-     * @param pdfParsingResDTO
      */
-    public String full_transfer_dateParsing(String pdfText, PdfParsingResDTO pdfParsingResDTO) {
+    public String[] full_transfer_dateParsing(String pdfText) {
 
         String[] splitted = pdfText.split("【  을      구  】");
         String[] additional_split = splitted[0].split("( 소유권에 관한 사항 )");
+        String[] lines = additional_split[additional_split.length - 1].split("\n");
         String regex = "(?<text>[가-힣]+지분전부) (?<date>\\d{4}년\\d{1,2}월\\d{1,2}일)";
 
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(additional_split[additional_split.length - 1]);
         StringBuilder sb = new StringBuilder();
-        String match = null;
+        StringBuilder sb2 = new StringBuilder();
+        String[] match = new String[2];
         if (matcher.find()) {
-            match = matcher.group("date");
+            match[0] = matcher.group("date");
+            match[0] = String.valueOf(sb.append("지분 전부이전 ").append(match[0]));
+        }
 
+        for (int i = lines.length-1; i >= 0; i--) {
+            if(lines[i].contains("소유권이전")) {
+                String[] words = lines[i].split(" ");
+                match[1] = words[3];
+                match[1] = String.valueOf(sb2.append("소유권이전 ").append(match[1]));
+                break;
+            }
         }
         return match;
     }
@@ -398,10 +411,9 @@ public class PdfParsingImpl implements PdfParsingService {
     /**
      * 요약 청구금액 파싱 - 갑구
      * @param pdfSplitParts
-     * @param pdfParsingResDTO
      * @return
      */
-    public HashMap<Integer, String> attachmentMoneyParsing(String pdfSplitParts, PdfParsingResDTO pdfParsingResDTO) {
+    public HashMap<Integer, String> attachmentMoneyParsing(String pdfSplitParts) {
 
         String regex = "(청구금액)\\s+금(\\d{1,3}(,\\d{3})*) 원";
         Pattern pattern = Pattern.compile(regex);
@@ -454,7 +466,7 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 요약 담보 총액 구하기 - 을구
+     * TODO 요약 담보 총액 구하기 - 을구
      * @param pdfSplitParts
      * @param pdfParsingResDTO
      */
@@ -465,52 +477,36 @@ public class PdfParsingImpl implements PdfParsingService {
         HashMap<Integer, String> max_mortgageBond = new HashMap<>();
         String[] splitted = pdfSplitParts.split("\n");
 
-        if (pdfSplitParts.contains("근저당권변경")) {
-            long previousAmount = 0;
+        String regex = "(채권최고액|전세금|채권액|임차보증금)\\s+금(\\d+,?)+원\\s";
+        Pattern pattern = Pattern.compile(regex);
+        for (int i = 0; i < splitted.length - 2; i++) {
 
-            for (String line : splitted) {
-                if (line.contains("채권최고액")) {
-                    String[] words = line.split(" ");
-                    long amount = Long.parseLong(words[5].replaceAll("[^0-9]", ""));
-                    if (line.contains("근저당권변경")) {
-                        sum_mortgageBond -= previousAmount;
-                        mortgageCount--;
-                    }
-                    sum_mortgageBond += amount;
-                    mortgageCount++;
-                    previousAmount = amount;
-                }
-            }
-            pdfParsingResDTO.setCollateral_count(mortgageCount);
-            return max_mortgageBond;
+            Matcher matcher = pattern.matcher(splitted[i + 2]);
 
-        } else {
-            String regex = "(채권최고액|전세금|채권액|임차보증금)\\s+금(\\d+,?)+원\\s";
-            Pattern pattern = Pattern.compile(regex);
-            for (int i = 0; i < splitted.length - 2; i++) {
-
-                Matcher matcher = pattern.matcher(splitted[i + 2]);
-
-                if (matcher.find()) {
-                    String match = matcher.group();
-                    long value = Long.parseLong(match.replaceAll("[^0-9]", ""));
-                    if (match.startsWith("전세금")) {
-                        max_mortgageBond.put(i/2 + 1, match);
-                    } else if (match.startsWith("채권최고액")) {
+            if (matcher.find()) {
+                String match = matcher.group();
+                long value = Long.parseLong(match.replaceAll("[^0-9]", ""));
+                if (match.startsWith("전세금")) {
+                    max_mortgageBond.put(i/2 + 1, match);
+                } else if (match.startsWith("채권최고액")) {
+                    if(splitted[i+2].contains("근저당권변경")){
                         max_mortgageBond.put(i/2 + 1, match);
                         sum_mortgageBond += value;
                         mortgageCount++;
-                    } else if (match.startsWith("채권액")) {
-                        max_mortgageBond.put(i/2 + 1, match);
-                    } else if (match.startsWith("임차보증금")) {
-                        max_mortgageBond.put(i/2 + 1, match);
                     }
+                    max_mortgageBond.put(i/2 + 1, match);
+                    sum_mortgageBond += value;
+                    mortgageCount++;
+                } else if (match.startsWith("채권액")) {
+                    max_mortgageBond.put(i/2 + 1, match);
+                } else if (match.startsWith("임차보증금")) {
+                    max_mortgageBond.put(i/2 + 1, match);
                 }
             }
-
-            pdfParsingResDTO.setCollateral_amount(sum_mortgageBond); // 채권최고액 합
-            pdfParsingResDTO.setCollateral_count(mortgageCount); // 채권최고액 건수
         }
+        pdfParsingResDTO.setCollateral_amount(sum_mortgageBond); // 채권최고액 합
+        pdfParsingResDTO.setCollateral_count(mortgageCount); // 채권최고액 건수
+
         return max_mortgageBond;
     }
 
@@ -522,12 +518,13 @@ public class PdfParsingImpl implements PdfParsingService {
 
         String regex = "(?<=(채권자|근저당권자|전세권자|임차권자)\\s{1,2})\\S+";
         Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(pdfSplitParts);
+        String[] lines = pdfSplitParts.split("\n");
         HashMap<Integer, String> attachmentName = new HashMap<>();
-        int count = 1;
-        while (matcher.find()) {
-            attachmentName.put(count, matcher.group());
-            count++;
+        for (int i = 0; i < lines.length - 2; i++) {
+            Matcher matcher = pattern.matcher(lines[i + 2]);
+            while (matcher.find()) {
+                attachmentName.put(i/2 + 1, matcher.group());
+            }
         }
         return attachmentName;
     }
