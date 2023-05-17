@@ -6,8 +6,10 @@ import com.example.finalproject.crawling.dto.ActTransacAndMarketPriceResDTO;
 import com.example.finalproject.crawling.dto.ActualTransactionPriceResDTO;
 import com.example.finalproject.crawling.dto.MarketPriceResDTO;
 import lombok.*;
+import org.springframework.util.LinkedMultiValueMap;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,8 @@ public class PdfParsingResDTO {
     private Long collateral_amount; // 채권최고액 합(담보총액)
 
     private int collateral_count; // 채권최고액 건수(담보건수)
+
+    private List<LinkedHashMap<String, Long>> originalMoney; // 원금추론
 
     private List<ActTransacAndMarketPriceResDTO> actTransacAndMarketPrice; // 실거래가 및 시세 정보
 

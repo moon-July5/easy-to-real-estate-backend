@@ -19,17 +19,13 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.util.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -82,7 +78,7 @@ public class PdfParsingImpl implements PdfParsingService {
                     throw new PDFValidationException();
                 }
                 withoutSummaryParsing(pdfText, pdfParsingResDTO);
-                //originalMoneyParsing(pdfParsingResDTO);
+                originalMoneyParsing(pdfParsingResDTO);
                 //craw(pdfParsingResDTO);
             } catch (Exception e) {
                 throw new KeywordValidationException();
@@ -574,8 +570,7 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     public void originalMoneyParsing(PdfParsingResDTO pdfParsingResDTO){
-        LinkedHashMap<Long, LinkedMultiValueMap<String, Integer>> parse = new LinkedHashMap<>();
-        LinkedMultiValueMap<String, Integer> value = new LinkedMultiValueMap<>();
+        List<LinkedHashMap<String, Long>> parse = new ArrayList<>();
         Map<Integer, HashMap<String, String>> original = pdfParsingResDTO.getRights_other_than_ownership();
         Long[] amount = new Long[original.size()];
         for (int i = 0; i < original.size(); i++) {
@@ -585,20 +580,18 @@ public class PdfParsingImpl implements PdfParsingService {
                 continue;
         } // 머니 없을떼 경우 continue;
         for (int i = 0; i < original.size(); i++) {
-            value.add("110%", (int)(amount[i] / 1.1));
-            value.add("115%", (int)(amount[i] / 1.15));
-            value.add("120%", (int)(amount[i] / 1.2));
-            value.add("130%", (int)(amount[i] / 1.3));
-            value.add("140%", (int)(amount[i] / 1.4));
-            value.add("150%", (int)(amount[i] / 1.5));
-            // 값이 같기때문에 hashMap의 특성으로 리스폰 없을수도있음
-            // key-value 형태의 hashMap 말고 찾아보기(순서대로인거)
-            //멀티맵?
+            LinkedHashMap<String, Long> map = new LinkedHashMap<>();
+            map.put("금액", amount[i]);
+            map.put("110%", (long)(amount[i] / 1.1));
+            map.put("115%", (long)(amount[i] / 1.15));
+            map.put("120%", (long)(amount[i] / 1.2));
+            map.put("130%", (long)(amount[i] / 1.3));
+            map.put("140%", (long)(amount[i] / 1.4));
+            map.put("150%", (long)(amount[i] / 1.5));
 
-            parse.put(amount[i], value);
-            //pdfParsingResDTO.setMemo(parse);
+            parse.add(map);
         }
-        pdfParsingResDTO.setMemo(parse);
+        pdfParsingResDTO.setOriginalMoney(parse);
     }
 
 }
