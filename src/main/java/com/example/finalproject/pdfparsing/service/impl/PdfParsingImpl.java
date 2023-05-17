@@ -575,21 +575,24 @@ public class PdfParsingImpl implements PdfParsingService {
         Long[] amount = new Long[original.size()];
         for (int i = 0; i < original.size(); i++) {
             HashMap<String, String> money = original.get(i+1);
-            amount[i] = Long.parseLong(money.get("info").replaceAll("[^0-9]", ""));
-            //if(money == null || money.equals(null))
-                continue;
-        } // 머니 없을떼 경우 continue;
+            String str = money.get("info").replaceAll("[^0-9]", "");
+            if( !(str == null || str.equals("")) ) {
+                amount[i] = Long.parseLong(str);
+            }
+        }
         for (int i = 0; i < original.size(); i++) {
             LinkedHashMap<String, Long> map = new LinkedHashMap<>();
-            map.put("금액", amount[i]);
-            map.put("110%", (long)(amount[i] / 1.1));
-            map.put("115%", (long)(amount[i] / 1.15));
-            map.put("120%", (long)(amount[i] / 1.2));
-            map.put("130%", (long)(amount[i] / 1.3));
-            map.put("140%", (long)(amount[i] / 1.4));
-            map.put("150%", (long)(amount[i] / 1.5));
+            if( !(amount[i] == null || amount[i].equals("")) ){
+                map.put("금액", amount[i]);
+                map.put("110%", (long)(amount[i] / 1.1));
+                map.put("115%", (long)(amount[i] / 1.15));
+                map.put("120%", (long)(amount[i] / 1.2));
+                map.put("130%", (long)(amount[i] / 1.3));
+                map.put("140%", (long)(amount[i] / 1.4));
+                map.put("150%", (long)(amount[i] / 1.5));
 
-            parse.add(map);
+                parse.add(map);
+            }
         }
         pdfParsingResDTO.setOriginalMoney(parse);
     }
