@@ -19,6 +19,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.util.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -80,7 +82,8 @@ public class PdfParsingImpl implements PdfParsingService {
                     throw new PDFValidationException();
                 }
                 withoutSummaryParsing(pdfText, pdfParsingResDTO);
-                craw(pdfParsingResDTO);
+                //originalMoneyParsing(pdfParsingResDTO);
+                //craw(pdfParsingResDTO);
             } catch (Exception e) {
                 throw new KeywordValidationException();
             }
@@ -197,7 +200,7 @@ public class PdfParsingImpl implements PdfParsingService {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(pdfSplitParts);
         Map<Integer, HashMap<String, String>> ownerMap = new HashMap<>();
-        int count = 1;
+        int count = 0;
         while (matcher.find()) {
             HashMap<String, String> owner = new HashMap<>();
             StringBuilder sb = new StringBuilder();
@@ -328,7 +331,7 @@ public class PdfParsingImpl implements PdfParsingService {
         String printTime = splitted[splitted.length - 1].substring(7).trim();
         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH시 mm분 ss초");
         LocalDateTime dt = LocalDateTime.parse(printTime, inputFormatter);
-        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy년MM월dd일");
         return dt.format(outputFormatter);
     }
 
@@ -367,10 +370,10 @@ public class PdfParsingImpl implements PdfParsingService {
 
         for(String info : additional_split) {
             if (info.contains("소유권대지권")) {
-                return "대지권 유";
+                return "유";
             }
         }
-        return "대지권 무";
+        return "무";
     }
 
     /**
@@ -515,28 +518,29 @@ public class PdfParsingImpl implements PdfParsingService {
         String regex = "(채권최고액|전세금|채권액|임차보증금)\\s+금(\\d+,?)+원\\s";
         Pattern pattern = Pattern.compile(regex);
         for (int i = 0; i < splitted.length - 2; i++) {
+           // if(i==25) {
+                Matcher matcher = pattern.matcher(splitted[i + 2]);
 
-            Matcher matcher = pattern.matcher(splitted[i + 2]);
-
-            if (matcher.find()) {
-                String match = matcher.group();
-                long value = Long.parseLong(match.replaceAll("[^0-9]", ""));
-                if (match.startsWith("전세금")) {
-                    max_mortgageBond.put(i/2 + 1, match);
-                } else if (match.startsWith("채권최고액")) {
-                    if(splitted[i+2].contains("근저당권변경")){
-                        max_mortgageBond.put(i/2 + 1, match);
+                if (matcher.find()) {
+                    String match = matcher.group();
+                    long value = Long.parseLong(match.replaceAll("[^0-9]", ""));
+                    if (match.startsWith("전세금")) {
+                        max_mortgageBond.put(i / 2 + 1, match);
+                    } else if (match.startsWith("채권최고액")) {
+                        if (splitted[i + 2].contains("근저당권변경")) {
+                            max_mortgageBond.put(i / 2 + 1, match);
+                            sum_mortgageBond += value;
+                            mortgageCount++;
+                        }
+                        max_mortgageBond.put(i / 2 + 1, match);
                         sum_mortgageBond += value;
                         mortgageCount++;
+                    } else if (match.startsWith("채권액")) {
+                        max_mortgageBond.put(i / 2 + 1, match);
+                    } else if (match.startsWith("임차보증금")) {
+                        max_mortgageBond.put(i / 2 + 1, match);
                     }
-                    max_mortgageBond.put(i/2 + 1, match);
-                    sum_mortgageBond += value;
-                    mortgageCount++;
-                } else if (match.startsWith("채권액")) {
-                    max_mortgageBond.put(i/2 + 1, match);
-                } else if (match.startsWith("임차보증금")) {
-                    max_mortgageBond.put(i/2 + 1, match);
-                }
+               // }
             }
         }
         pdfParsingResDTO.setCollateral_amount(sum_mortgageBond); // 채권최고액 합
@@ -546,7 +550,7 @@ public class PdfParsingImpl implements PdfParsingService {
     }
 
     /**
-     * 요약 주요등기사항 중 회사/사람 파싱 - 갑구&을구
+     * TODO 요약 주요등기사항 중 회사/사람 파싱 - 갑구&을구
      * @param pdfSplitParts
      * @return
      */
@@ -557,12 +561,44 @@ public class PdfParsingImpl implements PdfParsingService {
         String[] lines = pdfSplitParts.split("\n");
         HashMap<Integer, String> attachmentName = new HashMap<>();
         for (int i = 0; i < lines.length - 2; i++) {
-            Matcher matcher = pattern.matcher(lines[i + 2]);
-            while (matcher.find()) {
-                attachmentName.put(i/2 + 1, matcher.group());
-            }
+           // if(i==25) {
+                Matcher matcher = pattern.matcher(lines[i + 2]);
+                // 디버깅이 빡세면 if문으로 바로 가서 브레이킹포인트 잡고 해보기
+                if (matcher.find()) {
+                    //if(!lines[i+3].contains("제"))
+                    attachmentName.put(i / 2 + 1, matcher.group());
+                }
+           // }
         }
         return attachmentName;
+    }
+
+    public void originalMoneyParsing(PdfParsingResDTO pdfParsingResDTO){
+        LinkedHashMap<Long, LinkedMultiValueMap<String, Integer>> parse = new LinkedHashMap<>();
+        LinkedMultiValueMap<String, Integer> value = new LinkedMultiValueMap<>();
+        Map<Integer, HashMap<String, String>> original = pdfParsingResDTO.getRights_other_than_ownership();
+        Long[] amount = new Long[original.size()];
+        for (int i = 0; i < original.size(); i++) {
+            HashMap<String, String> money = original.get(i+1);
+            amount[i] = Long.parseLong(money.get("info").replaceAll("[^0-9]", ""));
+            //if(money == null || money.equals(null))
+                continue;
+        } // 머니 없을떼 경우 continue;
+        for (int i = 0; i < original.size(); i++) {
+            value.add("110%", (int)(amount[i] / 1.1));
+            value.add("115%", (int)(amount[i] / 1.15));
+            value.add("120%", (int)(amount[i] / 1.2));
+            value.add("130%", (int)(amount[i] / 1.3));
+            value.add("140%", (int)(amount[i] / 1.4));
+            value.add("150%", (int)(amount[i] / 1.5));
+            // 값이 같기때문에 hashMap의 특성으로 리스폰 없을수도있음
+            // key-value 형태의 hashMap 말고 찾아보기(순서대로인거)
+            //멀티맵?
+
+            parse.put(amount[i], value);
+            //pdfParsingResDTO.setMemo(parse);
+        }
+        pdfParsingResDTO.setMemo(parse);
     }
 
 }
