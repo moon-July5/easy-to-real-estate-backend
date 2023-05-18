@@ -79,7 +79,7 @@ public class PdfParsingImpl implements PdfParsingService {
                 }
                 withoutSummaryParsing(pdfText, pdfParsingResDTO);
                 originalMoneyParsing(pdfParsingResDTO);
-                //craw(pdfParsingResDTO);
+                craw(pdfParsingResDTO);
             } catch (Exception e) {
                 throw new KeywordValidationException();
             }
