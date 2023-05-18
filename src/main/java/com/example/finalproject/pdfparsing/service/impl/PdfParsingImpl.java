@@ -70,8 +70,6 @@ public class PdfParsingImpl implements PdfParsingService {
 
             try {
                 try {
-                    //exclusiveAreaParsing(pdfText, pdfParsingResDTO);
-                    //titleLandRightParsing(pdfText, pdfParsingResDTO);
                     summaryParsing(pdfText, pdfParsingResDTO);
                     pdfText.contains("주요 등기사항 요약");
                 }catch (Exception e){
@@ -178,6 +176,7 @@ public class PdfParsingImpl implements PdfParsingService {
         summary.put("landRights", land_rights);
         summary.put("fullTransfer", full_transfer_date[0]);
         summary.put("ownerTransfer", full_transfer_date[1]);
+        summary.put("mortgageInfo", "");
 
         pdfParsingResDTO.setSummary(summary);
     }
@@ -514,7 +513,6 @@ public class PdfParsingImpl implements PdfParsingService {
         String regex = "(채권최고액|전세금|채권액|임차보증금)\\s+금(\\d+,?)+원\\s";
         Pattern pattern = Pattern.compile(regex);
         for (int i = 0; i < splitted.length - 2; i++) {
-           // if(i==25) {
                 Matcher matcher = pattern.matcher(splitted[i + 2]);
 
                 if (matcher.find()) {
@@ -536,7 +534,6 @@ public class PdfParsingImpl implements PdfParsingService {
                     } else if (match.startsWith("임차보증금")) {
                         max_mortgageBond.put(i / 2 + 1, match);
                     }
-               // }
             }
         }
         pdfParsingResDTO.setCollateral_amount(sum_mortgageBond); // 채권최고액 합
@@ -555,16 +552,14 @@ public class PdfParsingImpl implements PdfParsingService {
         String regex = "(?<=(채권자|근저당권자|전세권자|임차권자)\\s{1,2})\\S+";
         Pattern pattern = Pattern.compile(regex);
         String[] lines = pdfSplitParts.split("\n");
+
         HashMap<Integer, String> attachmentName = new HashMap<>();
-        for (int i = 0; i < lines.length - 2; i++) {
-           // if(i==25) {
-                Matcher matcher = pattern.matcher(lines[i + 2]);
-                // 디버깅이 빡세면 if문으로 바로 가서 브레이킹포인트 잡고 해보기
-                if (matcher.find()) {
-                    //if(!lines[i+3].contains("제"))
-                    attachmentName.put(i / 2 + 1, matcher.group());
-                }
-           // }
+        for (int i = 0; i < lines.length-2; i++) {
+            Matcher matcher = pattern.matcher(lines[i+2]);
+
+            if (matcher.find()) {
+                attachmentName.put(i / 2 + 1, matcher.group());
+            }
         }
         return attachmentName;
     }
