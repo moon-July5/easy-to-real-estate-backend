@@ -38,7 +38,6 @@ import java.util.regex.Pattern;
 @Service
 public class CrawlingServiceImpl implements CrawlingService {
     private final AddressCodeService addressCodeService;
-    private final ResponseService responseService;
 
     @Override
     public void crawling(String complexesNumber, PdfParsingResDTO pdfParsingResDTO) {
@@ -157,6 +156,7 @@ public class CrawlingServiceImpl implements CrawlingService {
 
             String type = sellingType.get(i).text();
 
+            // 매매/전세 실거래가 부분
             int isActualPrice = document.select("div.detail_price_data table.type_real").size();
 
             if(isActualPrice!=0) {
@@ -221,7 +221,9 @@ public class CrawlingServiceImpl implements CrawlingService {
                 pdfParsingResDTO.setActualTransactionPrice(null);
             }
 
+            // 매매/전세 시세 부분
             int isMarketPrice = document.select("div.detail_price_data table.type_price").size();
+            String tabName = document.selectXpath("//*[@id=\"tabpanel1\"]/div[6]/div/button[1]").text();
 
             if(isMarketPrice!=0) {
                 //boolean displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
@@ -265,12 +267,23 @@ public class CrawlingServiceImpl implements CrawlingService {
 
                     String referenceDate = row.select("th").text().replaceAll("\\.", "-").substring(0, 10);
                     String lowerLimitPrice = row.select("td").get(0).text();
-                    String upperLimitPrice = row.select("td").get(1).text();
-                    String averageChange = null;
-                    if (row.select("td").get(2).text().equals("-")) {
-                        averageChange = row.select("td").get(2).text();
+                    String upperLimitPrice = null;
+
+                    if(tabName.equals("한국부동산원")) {
+                        upperLimitPrice = row.select("td").get(1).text();
                     } else {
-                        averageChange = row.select("td strong.detail_table_price span.detail_price_text").text();
+                        upperLimitPrice = row.select("td").get(2).text();
+                    }
+
+                    String averageChange = null;
+                    if(tabName.equals("한국부동산원")) {
+                        if (row.select("td").get(2).text().equals("-")) {
+                            averageChange = row.select("td").get(2).text();
+                        } else {
+                            averageChange = row.select("td strong.detail_table_price span.detail_price_text").text();
+                        }
+                    } else {
+                        averageChange = "-";
                     }
 
                     String salesVsRentPrice = row.select("td").get(3).text();
