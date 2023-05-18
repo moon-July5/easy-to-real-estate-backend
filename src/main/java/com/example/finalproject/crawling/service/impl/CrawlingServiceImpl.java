@@ -27,6 +27,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,9 +52,6 @@ public class CrawlingServiceImpl implements CrawlingService {
         HashMap<String, String> summary = pdfParsingResDTO.getSummary();
         String area = summary.get("area"); // 전용 면적
         String address = summary.get("address");
-
-        // 스크립트를 사용하기 위한 캐스팅
-        JavascriptExecutor js = (JavascriptExecutor) driver;
 
         String url = "https://new.land.naver.com/complexes/"+complexesNumber;
 
@@ -185,7 +184,7 @@ public class CrawlingServiceImpl implements CrawlingService {
                         //displayOk = driver.findElement(By.cssSelector("div.detail_price_data button.detail_data_more")).isDisplayed();
                         isButton = document.selectXpath("//*[@id=\"tabpanel1\"]/div[5]/button").size();
 
-                        if (count > 10)
+                        if (count > 7)
                             break;
                     } catch (NoSuchElementException ne) {
                         break;
@@ -226,7 +225,6 @@ public class CrawlingServiceImpl implements CrawlingService {
             String tabName = document.selectXpath("//*[@id=\"tabpanel1\"]/div[6]/div/button[1]").text();
 
             if(isMarketPrice!=0) {
-                //boolean displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
                 int isButton = document.selectXpath("//*[@id=\"tabpanel1\"]/div[7]/button").size();
 
                 int count = 0;
@@ -245,13 +243,12 @@ public class CrawlingServiceImpl implements CrawlingService {
 
                         count++;
 
-                        //displayOk = driver.findElement(By.xpath("//*[@id=\"tabpanel1\"]/div[7]/button")).isDisplayed();
                         isButton = document.selectXpath("//*[@id=\"tabpanel1\"]/div[7]/button").size();
 
                         // 현재 페이지의 소스코드 가져오기(페이지 소스 업데이트)
                         document = Jsoup.parse(driver.getPageSource());
 
-                        if (count > 13)
+                        if (count > 16)
                             break;
                     } catch (NoSuchElementException ne) {
                         break;
@@ -301,7 +298,9 @@ public class CrawlingServiceImpl implements CrawlingService {
                 pdfParsingResDTO.setMarketPrice(null);
             }
 
+
             ActTransacAndMarketPriceResDTO actTransacAndMarketPriceResDTO = new ActTransacAndMarketPriceResDTO();
+            document = Jsoup.parse(driver.getPageSource());
 
             // 최근 매매 실거래가 있는 경우
             if(document.select("dl.complex_price--trade").size() != 0){
@@ -345,8 +344,8 @@ public class CrawlingServiceImpl implements CrawlingService {
         driver.quit();
 
         pdfParsingResDTO.setActTransacAndMarketPrice(actTransacAndMarketPriceList);
-        pdfParsingResDTO.setActualTransactionPrice(actualTransactionPriceList);
-        pdfParsingResDTO.setMarketPrice(marketPriceList);
+        pdfParsingResDTO.setActualTransactionPrice(ActualTransactionPriceResDTO.extractThreeYear(actualTransactionPriceList));
+        pdfParsingResDTO.setMarketPrice(MarketPriceResDTO.extractThreeYear(marketPriceList));
         summary.put("lower_limit_price", actTransacAndMarketPriceList.get(0).getLower_limit_price());
         summary.put("upper_limit_price", actTransacAndMarketPriceList.get(0).getUpper_limit_price());
         summary.put("actual_transaction_price", actualTransactionPriceList.get(0).getPrice() + "("+actualTransactionPriceList.get(0).getContract_date()+", "+actualTransactionPriceList.get(0).getFloor()+"층)");
@@ -479,9 +478,9 @@ public class CrawlingServiceImpl implements CrawlingService {
     }
 
     private ChromeDriver option() {
-        System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
+        //System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
         //System.setProperty("webdriver.chrome.whitelistedIps", "");
-        //System.setProperty("webdriver.chrome.driver", "C:\\chromedriver_win32\\chromedriver.exe");
+        System.setProperty("webdriver.chrome.driver", "C:\\chromedriver_win32\\chromedriver.exe");
 
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless");
