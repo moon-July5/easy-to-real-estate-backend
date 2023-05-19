@@ -4,7 +4,6 @@ import com.example.finalproject.crawling.dto.ActTransacAndMarketPriceResDTO;
 import com.example.finalproject.crawling.dto.ActualTransactionPriceResDTO;
 import com.example.finalproject.crawling.dto.MarketPriceResDTO;
 import com.example.finalproject.crawling.service.CrawlingService;
-import com.example.finalproject.global.response.ResponseService;
 import com.example.finalproject.openapi.service.AddressCodeService;
 import com.example.finalproject.pdfparsing.dto.PdfParsingResDTO;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +16,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -27,8 +25,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -217,7 +213,7 @@ public class CrawlingServiceImpl implements CrawlingService {
                     }
                 }
             } else {
-                pdfParsingResDTO.setActualTransactionPrice(null);
+                //pdfParsingResDTO.setActualTransactionPrice(null);
             }
 
             // 매매/전세 시세 부분
@@ -295,7 +291,7 @@ public class CrawlingServiceImpl implements CrawlingService {
                     marketPriceList.add(marketPriceResDTO);
                 }
             } else {
-                pdfParsingResDTO.setMarketPrice(null);
+                //pdfParsingResDTO.setMarketPrice(null);
             }
 
 
@@ -343,9 +339,9 @@ public class CrawlingServiceImpl implements CrawlingService {
 
         driver.quit();
 
-        pdfParsingResDTO.setActTransacAndMarketPrice(actTransacAndMarketPriceList);
-        pdfParsingResDTO.setActualTransactionPrice(ActualTransactionPriceResDTO.extractThreeYear(actualTransactionPriceList));
-        pdfParsingResDTO.setMarketPrice(MarketPriceResDTO.extractThreeYear(marketPriceList));
+//        pdfParsingResDTO.setActTransacAndMarketPrice(actTransacAndMarketPriceList);
+//        pdfParsingResDTO.setActualTransactionPrice(ActualTransactionPriceResDTO.extractThreeYear(actualTransactionPriceList));
+//        pdfParsingResDTO.setMarketPrice(MarketPriceResDTO.extractThreeYear(marketPriceList));
         summary.put("lower_limit_price", actTransacAndMarketPriceList.get(0).getLower_limit_price());
         summary.put("upper_limit_price", actTransacAndMarketPriceList.get(0).getUpper_limit_price());
         summary.put("actual_transaction_price", actualTransactionPriceList.get(0).getPrice() + "("+actualTransactionPriceList.get(0).getContract_date()+", "+actualTransactionPriceList.get(0).getFloor()+"층)");

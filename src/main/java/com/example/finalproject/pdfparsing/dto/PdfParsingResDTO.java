@@ -1,10 +1,6 @@
 package com.example.finalproject.pdfparsing.dto;
 
 
-
-import com.example.finalproject.crawling.dto.ActTransacAndMarketPriceResDTO;
-import com.example.finalproject.crawling.dto.ActualTransactionPriceResDTO;
-import com.example.finalproject.crawling.dto.MarketPriceResDTO;
 import lombok.*;
 
 import java.util.HashMap;
@@ -35,10 +31,10 @@ public class PdfParsingResDTO {
 
     private List<LinkedHashMap<String, Long>> originalMoney; // 원금추론
 
-    private List<ActTransacAndMarketPriceResDTO> actTransacAndMarketPrice; // 실거래가 및 시세 정보
-
-    private List<ActualTransactionPriceResDTO> actualTransactionPrice; // 실거래가 정보
-
-    private List<MarketPriceResDTO> marketPrice; // 시세 정보
+//    private List<ActTransacAndMarketPriceResDTO> actTransacAndMarketPrice; // 실거래가 및 시세 정보
+//
+//    private List<ActualTransactionPriceResDTO> actualTransactionPrice; // 실거래가 정보
+//
+//    private List<MarketPriceResDTO> marketPrice; // 시세 정보
 
 }

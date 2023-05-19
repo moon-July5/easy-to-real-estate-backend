@@ -5,7 +5,6 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.example.finalproject.crawling.service.CrawlingService;
-import com.example.finalproject.crawling.service.impl.CrawlingServiceImpl;
 import com.example.finalproject.global.exception.KeywordValidationException;
 import com.example.finalproject.global.exception.PDFValidationException;
 import com.example.finalproject.global.response.CommonResponse;
@@ -77,7 +76,7 @@ public class PdfParsingImpl implements PdfParsingService {
                 }
                 withoutSummaryParsing(pdfText, pdfParsingResDTO);
                 originalMoneyParsing(pdfParsingResDTO);
-                craw(pdfParsingResDTO);
+                //craw(pdfParsingResDTO);
             } catch (Exception e) {
                 throw new KeywordValidationException();
             }
@@ -96,9 +95,9 @@ public class PdfParsingImpl implements PdfParsingService {
         if(!number.equals("")) {
             crawlingService.crawling(number, pdfParsingResDTO);
         } else {
-            pdfParsingResDTO.setMarketPrice(null);
-            pdfParsingResDTO.setActualTransactionPrice(null);
-            pdfParsingResDTO.setActTransacAndMarketPrice(null);
+//            pdfParsingResDTO.setMarketPrice(null);
+//            pdfParsingResDTO.setActualTransactionPrice(null);
+//            pdfParsingResDTO.setActTransacAndMarketPrice(null);
             summary.put("lower_limit_price", null);
             summary.put("upper_limit_price", null);
             summary.put("actual_transaction_price", null);
