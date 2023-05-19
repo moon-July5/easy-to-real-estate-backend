@@ -15,8 +15,6 @@ public class ProxyServiceImpl implements ProxyService {
     private String serviceKey;
     @Override
     public URI makeUrl(ProxyReqDTO proxyReqDTO) {
-        System.out.println("proxyReqDTO = " + proxyReqDTO.getDealYmd());
-
         UriComponentsBuilder uribuilder = UriComponentsBuilder.newInstance()
                 .scheme("http")
                 .host("openapi.molit.go.kr")
