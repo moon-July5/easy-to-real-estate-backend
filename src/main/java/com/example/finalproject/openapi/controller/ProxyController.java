@@ -1,7 +1,9 @@
 package com.example.finalproject.openapi.controller;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -18,12 +20,10 @@ import java.util.Map;
 public class ProxyController {
 
     @GetMapping("/api/proxy/")
-    public ResponseEntity<?> proxy(@RequestParam("url") String url,
-                                   @RequestParam("queryParams") String queryParams) {
-        url += queryParams;
+    public ResponseEntity<?> proxy(@RequestParam("queryParams") String queryParams) {
         RestTemplate restTemplate = new RestTemplate();
         HttpEntity<?> entity = new HttpEntity<>(new HttpHeaders());
-        ResponseEntity<Map> resultMap = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+        ResponseEntity<Map> resultMap = restTemplate.exchange(queryParams,  HttpMethod.GET, entity, Map.class);
         return resultMap;
     }
 }
