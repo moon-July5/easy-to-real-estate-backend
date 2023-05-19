@@ -18,7 +18,7 @@ import java.util.Map;
 public class ProxyController {
     private final ProxyService proxyService;
 
-    @GetMapping("/api/proxy")
+    @PostMapping("/api/proxy")
     public ResponseEntity<?> proxy(@RequestBody ProxyReqDTO proxyReqDTO) {
         RestTemplate restTemplate = new RestTemplate();
         HttpEntity<?> entity = new HttpEntity<>(new HttpHeaders());
